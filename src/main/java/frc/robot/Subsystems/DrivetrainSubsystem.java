@@ -131,6 +131,33 @@ public class DrivetrainSubsystem extends SubsystemBase{
             );
         }
 
+        public void periodic() {
+            
+            var results = camera.getAllUnreadResults();
+            for (var result: results) {
+                if (!result.hasTargets()) {
+                    continue;
+                }
+
+                var bestTarget = result.getBestTarget();
+                if (bestTarget == null) {
+                    return;
+                }
+
+                var translation = bestTarget.getBestCameraToTarget();
+
+                if (Math.abs(-translation.getX() - aimingPoseEstimator.getEstimatedPosition().getX()) > Constants.Drivetrain.Vision.XRejectDistance ||
+                        Math.abs(-translation.getY() - aimingPoseEstimator.getEstimatedPosition().getY()) > Constants.Drivetrain.Vision.XRejectDistance) {
+                    return;
+                }
+
+                lastVisionTime = currentVisionTime;
+                currentVisionTime = result.getTimestampSeconds();
+
+                aimingPoseEstimator.addVisionMeasurement(new Pose2d(-translation.getX(), -translation.getY(), new Rotation2d(-bestTarget.getYaw())), currentVisionTime);
+            }
+        }
+
         public Command aim() {
             return run(() -> {
                 var results = camera.getAllUnreadResults();
