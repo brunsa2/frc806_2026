@@ -108,7 +108,7 @@ public class SwerveModule extends SubsystemBase{
         // SmartDashboard.putNumber("S" + driveMotorID, getModuleAngRotations());
     }
 
-    public double getModuleAngRotations(){
+    public double getModuleAngRotations() {
         return moduleEncoder.getAbsolutePosition().getValueAsDouble() - Preferences.getDouble(EncoderPreferenceKey + encoderID, 0);
     }
 
