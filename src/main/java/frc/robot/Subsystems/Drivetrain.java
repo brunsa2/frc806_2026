@@ -91,19 +91,18 @@ public class Drivetrain extends SubsystemBase {
                 isCalibrating = true;
                 Preferences.setBoolean("Drivetrain.isPrepartingToCalibrate", true);
                 calibratingAlert.set(true);
-            }),
+            }).andThen(run(() -> {})),
             modules[0].prepareToCalibrate(),
             modules[1].prepareToCalibrate(),
             modules[2].prepareToCalibrate(),
             modules[3].prepareToCalibrate()
-        ).andThen(run(() -> {
-            isCalibrating = false;
-        })).withName("Prepare to calibrate");
+        ).withName("Prepare to calibrate");
     }
     
     public Command calibrate() {
         return parallel(
             runOnce(() -> {
+                isCalibrating = false;
                 Preferences.setBoolean("Drivetrain.isPrepartingToCalibrate", false);
                 calibratingAlert.set(false);
             }),
