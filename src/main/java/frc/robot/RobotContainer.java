@@ -4,64 +4,26 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Subsystems.DrivetrainSubsystem;
+import frc.robot.Subsystems.Drivetrain;
 
 public class RobotContainer {
+    public CommandXboxController driveController = new CommandXboxController(0);
+    CommandXboxController coDriveController = new CommandXboxController(1);
+    CommandXboxController ohShitController = new CommandXboxController(2);
 
-  //private Robot robot;
+    public final Drivetrain drivetrain = new Drivetrain(Constants.Modules.moduleArray, driveController);
 
-  
+    public RobotContainer() {
+        configureBindings();
+        SmartDashboard.putData(CommandScheduler.getInstance());
+    }
 
-  SendableChooser<Command> m_chooser = new SendableChooser<>();
-
-
-  CommandXboxController DriveController = new CommandXboxController(0);
-  //SmartDashboard
-  //CommandXboxController coDriveController = new CommandXboxController(1);
-  //Trigger xButton = DriveController.x();  
-  //Trigger yButton = DriveController.y();  
-  //Trigger bButton = DriveController.b();  
-  //Trigger ltrigger = DriveController.leftTrigger();
-  //Trigger rtrigger = DriveController.rightTrigger();
-  //Trigger noteAquired = new Trigger(IntakeSubsystem.getInstance()::getHasNote);
-  //Trigger dPadUp = DriveController.povUp();
-  //Trigger dPadDown = DriveController.povDown();
-
-  public RobotContainer() {
-
-    //robot = new_robot;
-    configureBindings();
-    //m_chooser.setDefaultOption("taxi", robot.taxi);
-    //m_chooser.addOption("shoot", robot.shoot);
-    //m_chooser.addOption("shoot and taxi", robot.shoot.andThen(robot.taxi));
-    //SmartDashboard.putData(m_chooser);
-  }
-
-  private void configureBindings() {
-
-    //xButton.onTrue(new IntakeSetAng(IntakeAng.Speaker));
-    //yButton.onTrue(new IntakeSetAng(IntakeAng.Amp));
-    //bButton.onTrue(new IntakeSetAng(IntakeAng.Extended));
-
-    //ltrigger.and(noteAquired.negate())
-    //  .whileTrue(new IntakeSetSpeed(IntakeSpeed.In));
-    //rtrigger.and(IntakeSubsystem.getInstance()::getAtSetpoint)
-    //  .whileTrue(new IntakeSetSpeed(IntakeSpeed.Out));
-
-    
-
-    //dPadUp.onTrue(new ClimberExtend());
-    //dPadDown.onTrue(new ClimberRetract());
-}
-
-  public Command getAutonomousCommand() {
-    return m_chooser.getSelected();
-  }
+    private void configureBindings() {
+        
+    }
 }
