@@ -8,16 +8,14 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 public class Shooter extends SubsystemBase {
     private final SparkFlex shooter;
-    public Shooter(int shooterMotorId, int topRollerMoterId) {
-        shooter = new SparkFlex(shooterMotorId, MotorType.kBrushless);
+    
+    public Shooter(int MotorID) {
+        shooter = new SparkFlex(MotorID, MotorType.kBrushless);
 
         SparkFlexConfig config = new SparkFlexConfig();
         config.idleMode(IdleMode.kCoast).smartCurrentLimit(30);
 
         shooter.configure(config, SparkFlex.ResetMode.kResetSafeParameters, SparkFlex.PersistMode.kPersistParameters);
-    }
-    public Shooter(int motorId) {
-
     }
 
     // _If_ we need a third state where motor does not turn, turn off the motor

@@ -46,6 +46,20 @@ public class Constants {
         
     }
 
+    public interface Indexer {
+        public static final int BottomRollerID = 14;
+        public static final int TopRollerID = 16;
+    }
+
+    public interface Shooter {
+        public static final int MotorID = 17;
+    }
+
+    public interface Intake {
+        public static final int ArmID = 13;
+        public static final int RollerID = 15;
+    }
+
     public interface Drivetrain {
         public static final double TranslationPow = 3;
         public static final double RotationPow = 3;

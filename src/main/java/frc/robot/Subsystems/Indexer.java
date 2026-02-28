@@ -9,9 +9,9 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 public class Indexer extends SubsystemBase {
     private final SparkFlex bottomRoller;
     private final SparkFlex topRoller;
-    public Indexer(int bottomRollerMotorId, int topRollerMoterId) {
-        bottomRoller = new SparkFlex(bottomRollerMotorId, MotorType.kBrushless);
-        topRoller = new SparkFlex(topRollerMoterId, MotorType.kBrushless);
+    public Indexer(int BottomRollerID, int TopRollerID) {
+        bottomRoller = new SparkFlex(BottomRollerID, MotorType.kBrushless);
+        topRoller = new SparkFlex(TopRollerID, MotorType.kBrushless);
 
         SparkFlexConfig config = new SparkFlexConfig();
         config.idleMode(IdleMode.kCoast).smartCurrentLimit(30);
