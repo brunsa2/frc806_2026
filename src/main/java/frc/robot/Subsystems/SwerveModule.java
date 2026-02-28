@@ -88,15 +88,6 @@ public class SwerveModule extends SubsystemBase{
         driveMotor.set(targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS); 
     }
 
-    public Command prepareToCalibrate() {
-        return runOnce(() -> {
-            steerMotor.setNeutralMode(NeutralModeValue.Coast);
-            steerMotor.set(0);
-        }).finallyDo(() -> {
-            steerMotor.setNeutralMode(NeutralModeValue.Brake);
-        }).withName("Prepare to calibrate");
-    }
-    
     public Command calibrate() {
         return runOnce(() -> {
             var encoderValue = moduleEncoder.getAbsolutePosition().getValueAsDouble();

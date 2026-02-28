@@ -30,7 +30,7 @@ import frc.robot.Commands.DriveFieldRelative;
 public class Drivetrain extends SubsystemBase {
 
     // ADIS16470_IMU IMU;
-    boolean isCalibrating;
+    boolean isWaitingToCalibrate;
     Pigeon2 IMU;
     public SwerveModule[] modules;
     SwerveDriveKinematics kinematics;
@@ -43,7 +43,8 @@ public class Drivetrain extends SubsystemBase {
     SlewRateLimiter rotationLimiter = new SlewRateLimiter(rotationMaxAccelerationRadiansPerSecondSquared);
     private final StructArrayPublisher<SwerveModuleState> statePublisher;
 
-    private final Alert calibratingAlert = new Alert("Calibrating steering motors", AlertType.kInfo);
+    private final Alert willCalibrateAlert = new Alert("Robot will enter drivetrain calibration when re-enabled", AlertType.kInfo);
+    private final Alert calibratingAlert = new Alert("Drivetrain can be calibrated. Align wheels when disabled and calibrate or cancel", AlertType.kInfo);
     
     public Drivetrain(SwerveModule[] modules, CommandXboxController controller) {
         // IMU = new ADIS16470_IMU();
@@ -54,8 +55,9 @@ public class Drivetrain extends SubsystemBase {
         statePublisher = NetworkTableInstance.getDefault().getStructArrayTopic("SwerveModules", SwerveModuleState.struct).publish();
         setDefaultCommand(new DriveFieldRelative(this, controller));
 
-        SmartDashboard.putData(prepareToCalibrate());
+        SmartDashboard.putData(enableCalibration());
         SmartDashboard.putData(calibrate());
+        SmartDashboard.putData(cancelCalibration());
         SmartDashboard.putData(this);
 
         
@@ -78,39 +80,38 @@ public class Drivetrain extends SubsystemBase {
     }
 
     public Command getInitialCommand() {
-        if (Preferences.getBoolean("Drivetrain.isPrepartingToCalibrate", true)) {
-            return prepareToCalibrate();
+        if (Preferences.getBoolean("Drivetrain.enableDrivetrainCalibration", true)) {
+            return waitToCalibrate();
         } else {
             return getDefaultCommand();
         }
     }
 
-    public Command prepareToCalibrate() {
-        return parallel(
-            runOnce(() -> {
-                isCalibrating = true;
-                Preferences.setBoolean("Drivetrain.isPrepartingToCalibrate", true);
-                calibratingAlert.set(true);
-            }).andThen(run(() -> {})),
-            modules[0].prepareToCalibrate(),
-            modules[1].prepareToCalibrate(),
-            modules[2].prepareToCalibrate(),
-            modules[3].prepareToCalibrate()
-        ).withName("Prepare to calibrate");
+    public Command enableCalibration() {
+        return runOnce(() -> { willCalibrateAlert.set(true); Preferences.setBoolean("Drivetrain.enableDrivetrainCalibration", true); }).withName("Enabling calibration");
+    }
+
+    public Command waitToCalibrate() {
+        return runOnce(() -> { isWaitingToCalibrate = true; willCalibrateAlert.set(false); calibratingAlert.set(true); } ).andThen(run(() -> {}))
+        .finallyDo(() -> {
+            Preferences.setBoolean("Drivetrain.enableDrivetrainCalibration", false);
+            willCalibrateAlert.set(false);
+            calibratingAlert.set(false);
+        }).withName("Waiting to calibrate");
     }
     
     public Command calibrate() {
         return parallel(
-            runOnce(() -> {
-                isCalibrating = false;
-                Preferences.setBoolean("Drivetrain.isPrepartingToCalibrate", false);
-                calibratingAlert.set(false);
-            }),
+            runOnce(() -> isWaitingToCalibrate = false ),
             modules[0].calibrate(),
             modules[1].calibrate(),
             modules[2].calibrate(),
             modules[3].calibrate()
-        ).onlyIf(() -> isCalibrating).withName("Calibrate");
+        ).onlyIf(() -> isWaitingToCalibrate).withName("Calibrating");
+    }
+
+    public Command cancelCalibration() {
+        return runOnce(() -> isWaitingToCalibrate = false ).withName("Canceling calibration");
     }
 
     public void drive(ChassisSpeeds  chassisSpeeds){
