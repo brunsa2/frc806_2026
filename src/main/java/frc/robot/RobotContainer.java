@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Subsystems.Camera;
 import frc.robot.Subsystems.Drivetrain;
 
 public class RobotContainer {
@@ -17,6 +18,7 @@ public class RobotContainer {
     CommandXboxController ohShitController = new CommandXboxController(2);
 
     public final Drivetrain drivetrain = new Drivetrain(Constants.Modules.moduleArray, driveController);
+    public final Camera camera = new Camera(Constants.Camera.Name, Constants.Camera.MaxTrackedTargets, drivetrain::getKinematics, drivetrain::getGyroscopeRotation, drivetrain::getModulePositions);
 
     public RobotContainer() {
         configureBindings();

@@ -25,6 +25,12 @@ public class Constants {
 
     public static double controllerDeadband = 0.15; 
 
+    public interface Camera {
+        public static final String Name = "photonvision";
+        public static final int MaxTrackedTargets = 3;
+        public static final double MaxTargetPoseAmbiguity = 0.2;
+    }
+
     public interface Modules{
         public static final double SpeedKP = 0.001, SpeedKI = 0, SpeedKD = 0.0005;
         public static final double SteerKP = 1.5, SteerKI = 0, SteerKD = 0;

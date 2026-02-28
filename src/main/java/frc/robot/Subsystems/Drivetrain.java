@@ -85,6 +85,10 @@ public class Drivetrain extends SubsystemBase {
         
     }
 
+    public SwerveDriveKinematics getKinematics() {
+        return kinematics;
+    }
+
     public Rotation2d getGyroscopeRotation() {
         //return Rotation2d.fromDegrees(IMU.get());
     
@@ -174,102 +178,102 @@ public class Drivetrain extends SubsystemBase {
         );
     }
 
-    public void periodic() {
+    // public void periodic() {
             
-        var results = camera.getAllUnreadResults();
-        for (var result: results) {
-            if (!result.hasTargets()) {
-                continue;
-            }
+    //     var results = camera.getAllUnreadResults();
+    //     for (var result: results) {
+    //         if (!result.hasTargets()) {
+    //             continue;
+    //         }
 
-            var bestTarget = result.getBestTarget();
-            if (bestTarget == null) {
-                return;
-            }
+    //         var bestTarget = result.getBestTarget();
+    //         if (bestTarget == null) {
+    //             return;
+    //         }
 
-            var translation = bestTarget.getBestCameraToTarget();
+    //         var translation = bestTarget.getBestCameraToTarget();
 
-            if (Math.abs(-translation.getX() - aimingPoseEstimator.getEstimatedPosition().getX()) > Constants.Drivetrain.Vision.XRejectDistance ||
-                    Math.abs(-translation.getY() - aimingPoseEstimator.getEstimatedPosition().getY()) > Constants.Drivetrain.Vision.XRejectDistance) {
-                return;
-            }
+    //         if (Math.abs(-translation.getX() - aimingPoseEstimator.getEstimatedPosition().getX()) > Constants.Drivetrain.Vision.XRejectDistance ||
+    //                 Math.abs(-translation.getY() - aimingPoseEstimator.getEstimatedPosition().getY()) > Constants.Drivetrain.Vision.XRejectDistance) {
+    //             return;
+    //         }
 
-            lastVisionTime = currentVisionTime;
-            currentVisionTime = result.getTimestampSeconds();
+    //         lastVisionTime = currentVisionTime;
+    //         currentVisionTime = result.getTimestampSeconds();
 
-            aimingPoseEstimator.addVisionMeasurement(new Pose2d(-translation.getX(), -translation.getY(), new Rotation2d(-bestTarget.getYaw())), currentVisionTime);
-        }
-    }
+    //         aimingPoseEstimator.addVisionMeasurement(new Pose2d(-translation.getX(), -translation.getY(), new Rotation2d(-bestTarget.getYaw())), currentVisionTime);
+    //     }
+    // }
 
-    public Command aim() {
-        return run(() -> {
-            var results = camera.getAllUnreadResults();
-            if (results.isEmpty()) {
-                return;
-            }
-            var result = results.get(results.size() - 1);
-            if (!result.hasTargets()) {
-                return;
-            }
-            var bestTarget = result.getBestTarget();
-            if (bestTarget == null) {
-                return;
-            }
-            var translation = bestTarget.getBestCameraToTarget();
+    // public Command aim() {
+    //     return run(() -> {
+    //         var results = camera.getAllUnreadResults();
+    //         if (results.isEmpty()) {
+    //             return;
+    //         }
+    //         var result = results.get(results.size() - 1);
+    //         if (!result.hasTargets()) {
+    //             return;
+    //         }
+    //         var bestTarget = result.getBestTarget();
+    //         if (bestTarget == null) {
+    //             return;
+    //         }
+    //         var translation = bestTarget.getBestCameraToTarget();
 
-            aimingPoseEstimator = new SwerveDrivePoseEstimator(
-                kinematics,
-                getGyroscopeRotation(),
-                getModulePositions(),
-                new Pose2d(-translation.getX(), -translation.getY(), new Rotation2d(-bestTarget.getYaw())),
-                new Matrix<N3, N1>(Nat.N3(), Nat.N1(), new double[]{Constants.Drivetrain.Odometry.PositionStdDev, Constants.Drivetrain.Odometry.PositionStdDev, Constants.Drivetrain.Odometry.AngleStdDev}),
-                new Matrix<N3, N1>(Nat.N3(), Nat.N1(), new double[]{Constants.Drivetrain.Vision.XConstantStdDev, Constants.Drivetrain.Vision.YConstantStdDev, Constants.Drivetrain.Vision.AngleStdDev})
-            );
-            lastVisionTime = getFPGATimestamp();
-        })
-        .until(() -> aimingPoseEstimator != null).withTimeout(Constants.Drivetrain.Vision.InitialTimeoutSeconds).withName("Acquire target")
-        .andThen(
-            race(
-                run(() -> {
-                    aimingPoseEstimator.updateWithTime(getFPGATimestamp(), getGyroscopeRotation(), getModulePositions());
-                    var poseEstimate = aimingPoseEstimator.getEstimatedPosition();
-                    var forwardVelocity = MathUtil.clamp(visionForwardBackController.calculate(poseEstimate.getX(), Constants.Drivetrain.Vision.TargetX), -0.1, 0.1);
-                    var sidewaysVelocity = MathUtil.clamp(visionSidewaysController.calculate(poseEstimate.getY(), Constants.Drivetrain.Vision.TargetY), -0.1, 0.1);
-                    var angularVelcoity = MathUtil.clamp(visionRotationsController.calculate(poseEstimate.getRotation().getRadians(), Constants.Drivetrain.Vision.TargetTheta), -0.1, 0.1);
-                    var speeds = new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelcoity);
-                    drive(speeds);
-                }).until(() -> visionForwardBackController.atSetpoint() &&
-                        visionSidewaysController.atSetpoint() &&
-                        visionRotationsController.atSetpoint()).withName("Drive"),
-                run(() -> {
-                    var results = camera.getAllUnreadResults();
-                    for (var result: results) {
-                        if (!result.hasTargets()) {
-                            continue;
-                        }
+    //         aimingPoseEstimator = new SwerveDrivePoseEstimator(
+    //             kinematics,
+    //             getGyroscopeRotation(),
+    //             getModulePositions(),
+    //             new Pose2d(-translation.getX(), -translation.getY(), new Rotation2d(-bestTarget.getYaw())),
+    //             new Matrix<N3, N1>(Nat.N3(), Nat.N1(), new double[]{Constants.Drivetrain.Odometry.PositionStdDev, Constants.Drivetrain.Odometry.PositionStdDev, Constants.Drivetrain.Odometry.AngleStdDev}),
+    //             new Matrix<N3, N1>(Nat.N3(), Nat.N1(), new double[]{Constants.Drivetrain.Vision.XConstantStdDev, Constants.Drivetrain.Vision.YConstantStdDev, Constants.Drivetrain.Vision.AngleStdDev})
+    //         );
+    //         lastVisionTime = getFPGATimestamp();
+    //     })
+    //     .until(() -> aimingPoseEstimator != null).withTimeout(Constants.Drivetrain.Vision.InitialTimeoutSeconds).withName("Acquire target")
+    //     .andThen(
+    //         race(
+    //             run(() -> {
+    //                 aimingPoseEstimator.updateWithTime(getFPGATimestamp(), getGyroscopeRotation(), getModulePositions());
+    //                 var poseEstimate = aimingPoseEstimator.getEstimatedPosition();
+    //                 var forwardVelocity = MathUtil.clamp(visionForwardBackController.calculate(poseEstimate.getX(), Constants.Drivetrain.Vision.TargetX), -0.1, 0.1);
+    //                 var sidewaysVelocity = MathUtil.clamp(visionSidewaysController.calculate(poseEstimate.getY(), Constants.Drivetrain.Vision.TargetY), -0.1, 0.1);
+    //                 var angularVelcoity = MathUtil.clamp(visionRotationsController.calculate(poseEstimate.getRotation().getRadians(), Constants.Drivetrain.Vision.TargetTheta), -0.1, 0.1);
+    //                 var speeds = new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelcoity);
+    //                 drive(speeds);
+    //             }).until(() -> visionForwardBackController.atSetpoint() &&
+    //                     visionSidewaysController.atSetpoint() &&
+    //                     visionRotationsController.atSetpoint()).withName("Drive"),
+    //             run(() -> {
+    //                 var results = camera.getAllUnreadResults();
+    //                 for (var result: results) {
+    //                     if (!result.hasTargets()) {
+    //                         continue;
+    //                     }
 
-                        var bestTarget = result.getBestTarget();
-                        if (bestTarget == null) {
-                            return;
-                        }
+    //                     var bestTarget = result.getBestTarget();
+    //                     if (bestTarget == null) {
+    //                         return;
+    //                     }
 
-                        var translation = bestTarget.getBestCameraToTarget();
+    //                     var translation = bestTarget.getBestCameraToTarget();
 
-                        if (Math.abs(-translation.getX() - aimingPoseEstimator.getEstimatedPosition().getX()) > Constants.Drivetrain.Vision.XRejectDistance ||
-                                Math.abs(-translation.getY() - aimingPoseEstimator.getEstimatedPosition().getY()) > Constants.Drivetrain.Vision.XRejectDistance) {
-                            return;
-                        }
+    //                     if (Math.abs(-translation.getX() - aimingPoseEstimator.getEstimatedPosition().getX()) > Constants.Drivetrain.Vision.XRejectDistance ||
+    //                             Math.abs(-translation.getY() - aimingPoseEstimator.getEstimatedPosition().getY()) > Constants.Drivetrain.Vision.XRejectDistance) {
+    //                         return;
+    //                     }
 
-                        lastVisionTime = currentVisionTime;
-                        currentVisionTime = result.getTimestampSeconds();
+    //                     lastVisionTime = currentVisionTime;
+    //                     currentVisionTime = result.getTimestampSeconds();
 
-                        aimingPoseEstimator.addVisionMeasurement(new Pose2d(-translation.getX(), -translation.getY(), new Rotation2d(-bestTarget.getYaw())), currentVisionTime);
-                    }
-                }).until(() -> currentVisionTime - lastVisionTime > Constants.Drivetrain.Vision.TimeoutSeconds).withName("Track target")
-            )
-        ).withName("Aim and range")
-        .finallyDo(() -> {
-            aimingPoseEstimator = null;
-        }).withName("Auto aim and range");
-    }
+    //                     aimingPoseEstimator.addVisionMeasurement(new Pose2d(-translation.getX(), -translation.getY(), new Rotation2d(-bestTarget.getYaw())), currentVisionTime);
+    //                 }
+    //             }).until(() -> currentVisionTime - lastVisionTime > Constants.Drivetrain.Vision.TimeoutSeconds).withName("Track target")
+    //         )
+    //     ).withName("Aim and range")
+    //     .finallyDo(() -> {
+    //         aimingPoseEstimator = null;
+    //     }).withName("Auto aim and range");
+    // }
 }

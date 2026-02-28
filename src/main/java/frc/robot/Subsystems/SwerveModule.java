@@ -33,7 +33,7 @@ public class SwerveModule extends SubsystemBase{
     //conversion factors
     final double WHEEL_DIAMETER = Units.inchesToMeters(4);
     final double WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER * Math.PI;
-    final double GEAR_RATIO = 1.0 / 6.75;
+    final double GEAR_RATIO = 1.0 / 5.27;
     final double DRIVE_POSITION_CONVERSION = WHEEL_CIRCUMFERENCE * GEAR_RATIO;
     final double DRIVE_VELOCITY_CONVERSION = DRIVE_POSITION_CONVERSION / 60.0;
     final double STEER_POSITION_CONVERSION = 1;
@@ -50,6 +50,7 @@ public class SwerveModule extends SubsystemBase{
         driveMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         driveMotorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         driveMotorConfig.CurrentLimits.SupplyCurrentLimit = 40;
+        driveMotorConfig.Feedback.RotorToSensorRatio = DRIVE_POSITION_CONVERSION;
         driveMotor.getConfigurator().apply(driveMotorConfig);
 
         //steer motor
