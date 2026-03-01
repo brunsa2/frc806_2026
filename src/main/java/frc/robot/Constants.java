@@ -38,10 +38,10 @@ public class Constants {
         public static final int RearRightDriveID   = 10, RearRightSteerID   = 11, RearRightEncoderID = 12;
 
         SwerveModule[] moduleArray = new SwerveModule[] {
-            new SwerveModule(FrontRightDriveID,FrontRightSteerID,FrontRightEncoderID, false),
+            new SwerveModule(FrontRightDriveID,FrontRightSteerID,FrontRightEncoderID, true),
             new SwerveModule(FrontLeftDriveID, FrontLeftSteerID, FrontLeftEncoderID, false),
             new SwerveModule(RearLeftDriveID, RearLeftSteerID, RearLeftEncoderID, false),
-            new SwerveModule(RearRightDriveID, RearRightSteerID, RearRightEncoderID, false)
+            new SwerveModule(RearRightDriveID, RearRightSteerID, RearRightEncoderID, true)
         };
         
     }
@@ -53,7 +53,7 @@ public class Constants {
         public static final double SlowFactor = 3;
         public static final double SlowFactorOffset = 1;
 
-        public static final double SteerMotorSlewRate = 100;
+        public static final double SteerMotorSlewRate = 20;
     }
 
     public interface Motion {

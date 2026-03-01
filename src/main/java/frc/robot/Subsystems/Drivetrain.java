@@ -75,8 +75,8 @@ public class Drivetrain extends SubsystemBase {
     //     IMU.calibrate();   
     //  }
 
-    public void resetGyro(){
-        // IMU.reset();
+    public void resetGyro() {
+        IMU.reset();
     }
 
     public Command getInitialCommand() {
