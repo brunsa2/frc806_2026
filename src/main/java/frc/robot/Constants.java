@@ -9,10 +9,10 @@ public class Constants {
     
     // 25.25 inches wide, 18.16 inches deep
     public static final Translation2d[] moduleLocations = {
-        new Translation2d(-0.320675, 0.230505),  //front right +-
-        new Translation2d(-0.320675, -0.230505), //front left ++
-        new Translation2d(0.320675, -0.230505),  //rear left -+
-        new Translation2d(0.320675, 0.230505)  //rear right --
+        new Translation2d(0.230505, -0.320675),  //front right +-
+        new Translation2d(0.230505, 0.320675), //front left ++
+        new Translation2d(-0.230505, 0.320675),  //rear left -+
+        new Translation2d(-0.230505, -0.320675)  //rear right --
     };
 
     //velocity constranints for swerve desaturate
