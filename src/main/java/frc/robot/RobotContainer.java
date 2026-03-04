@@ -20,7 +20,7 @@ public class RobotContainer {
     CommandXboxController coDriveController = new CommandXboxController(1);
     CommandXboxController ohShitController = new CommandXboxController(2);
 
-    private final Trigger driveRightTrigger = coDriveController.rightTrigger(0.5);
+    private final Trigger driveRightTrigger = driveController.rightTrigger(0.5);
 
     public final Drivetrain drivetrain = new Drivetrain(Constants.Modules.moduleArray, driveController);
     
