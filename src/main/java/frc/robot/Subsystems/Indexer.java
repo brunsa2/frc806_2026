@@ -43,7 +43,7 @@ public class Indexer extends SubsystemBase {
         return runEnd(() -> {
             bottomRoller.set(floorIndexSpeed);
             topRoller.set(ceilingIndexSpeed);
-        }, () -> {}).withName("Start indexing");
+        }, () -> {}).withName("Index");
     }
 
     @Override
