@@ -11,8 +11,8 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 public class Shooter extends SubsystemBase {
     private final SparkFlex shooter;
 
-    private double primeSpeed = 0.1;
-    private double shootSpeed = 0.2;
+    private double primeSpeed = 0.45;
+    private double shootSpeed = 0.55;
     
     @SuppressWarnings("removal")
     public Shooter(int MotorID) {

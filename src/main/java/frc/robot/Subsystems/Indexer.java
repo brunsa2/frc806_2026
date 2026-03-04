@@ -12,9 +12,10 @@ public class Indexer extends SubsystemBase {
     private final SparkFlex bottomRoller;
     private final SparkFlex topRoller;
 
-    private final double floorIdleSpeed = 0.05;
-    private final double floorIndexSpeed = 0.3;
-    private final double ceilingIndexSpeed = 0.3;
+    private final double floorIdleSpeed = 0.1;
+    private final double floorIndexSpeed = 0.4;
+    private final double ceilingIdleSpeed = 0.2;
+    private final double ceilingIndexSpeed = 0.7;
 
     @SuppressWarnings("removal")
     public Indexer(int bottomRollerID, int topRollerID) {
@@ -28,22 +29,21 @@ public class Indexer extends SubsystemBase {
         bottomRoller.configure(config, SparkFlex.ResetMode.kResetSafeParameters, SparkFlex.PersistMode.kPersistParameters);
         topRoller.configure(config, SparkFlex.ResetMode.kResetSafeParameters, SparkFlex.PersistMode.kPersistParameters);
 
-        setDefaultCommand(rollFloor());
+        setDefaultCommand(idleIndex());
     }
 
-    public Command rollFloor() {
+    public Command idleIndex() {
         return runEnd(() -> {
             bottomRoller.set(floorIdleSpeed);
-        }, () -> {}).withName("Roll floor");
+            topRoller.set(-ceilingIdleSpeed);
+        }, () -> {}).withName("Idle index");
     }
 
     public Command index() {
         return runEnd(() -> {
             bottomRoller.set(floorIndexSpeed);
             topRoller.set(ceilingIndexSpeed);
-        }, () -> {
-            topRoller.set(0);
-        }).withName("Start indexing");
+        }, () -> {}).withName("Start indexing");
     }
 
     @Override
