@@ -28,7 +28,7 @@ public class Shooter extends SubsystemBase {
         shooter = new SparkFlex(MotorID, MotorType.kBrushless);
         encoder = shooter.getEncoder();
         SparkFlexConfig config = new SparkFlexConfig();
-        config.idleMode(IdleMode.kBrake).smartCurrentLimit(30);
+        config.idleMode(IdleMode.kCoast).smartCurrentLimit(30);
         config.inverted(true);
         shooter.configure(config, SparkFlex.ResetMode.kResetSafeParameters, SparkFlex.PersistMode.kPersistParameters);
 
@@ -39,23 +39,23 @@ public class Shooter extends SubsystemBase {
     // when leaving the other two states and have no default command.
 
 
-    public void setSpeed(double currentRPM, double targetRPM) {
+    public void setSpeed(double targetRPM) {
+        targetRPM = targetRPM / 60;
+        double currentRPM = encoder.getVelocity() / 60;
         double pidOutput = controller.calculate(currentRPM, targetRPM);
-        double ffOutput = ff.calculate(currentRPM);
+        double ffOutput = ff.calculate(targetRPM);
         shooter.setVoltage(pidOutput + ffOutput);
     }
 
     public Command prime() {
         // Default command, rotate slowly to reduce shooting prep time
-        double currentRPM = encoder.getVelocity();
-        return runEnd(() -> setSpeed(currentRPM, primeRPM), () -> {}).withName("Prime");
+        return runEnd(() -> setSpeed(primeRPM), () -> {}).withName("Prime");
     }
 
     public Command shoot() {
         // Speed up rollers, control velocty
         // https://docs.wpilib.org/en/stable/docs/software/advanced-controls/introduction/tuning-flywheel.html
-        double currentRPM = encoder.getVelocity();
-        return runEnd(() -> setSpeed(currentRPM, shootRPM), () -> {}).withName("Shoot");
+        return runEnd(() -> setSpeed(shootRPM), () -> {}).withName("Shoot");
     }
 
     @Override
