@@ -41,7 +41,7 @@ public class Shooter extends SubsystemBase {
 
     public void setSpeed(double currentRPM, double targetRPM) {
         double pidOutput = controller.calculate(currentRPM, targetRPM);
-        double ffOutput = ff.calculate(targetRPM);
+        double ffOutput = ff.calculate(currentRPM);
         shooter.setVoltage(pidOutput + ffOutput);
     }
 
