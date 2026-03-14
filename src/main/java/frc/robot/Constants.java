@@ -63,6 +63,17 @@ public class Constants {
     public interface Intake {
         public static final int ArmID = 15;
         public static final int RollerID = 13;
+        public static final int ArmEncoderId = 18;
+        public static final double kG = 0.5;
+        public static final double kS = 0.2;
+        public static final double kV = 3.0;
+        public static final double kA = 0.1;
+        public static final double kP = 0.5;
+        public static final double kI = 0;
+        public static final double kD = 0;
+        public static final double MotionMagicCruiseVelocity = 0;
+        public static final double MotionMagicExpo_kV = kV;
+        public static final double MotionMagicExpo_kA = kA;
     }
 
     public interface Drivetrain {
