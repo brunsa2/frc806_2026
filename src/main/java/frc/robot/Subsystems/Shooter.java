@@ -83,11 +83,11 @@ public class Shooter extends SubsystemBase {
 
     public Command prime() {
         // // Default command, rotate slowly to reduce shooting prep time
-        // return runEnd(() -> {
-        //     setSpeed(primeRPS);
-        //     shooter_debug("Prime");
-        // }, () -> {}).withName("Prime");
-        return run(() -> {});
+        return runEnd(() -> {
+            setSpeed(primeRPS);
+            shooter_debug("Prime");
+        }, () -> {}).withName("Prime");
+        // return run(() -> {});
     }
 
     public Command shoot() {

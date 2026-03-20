@@ -8,14 +8,11 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
+import frc.robot.Constants;
+
 public class Indexer extends SubsystemBase {
     private final SparkFlex bottomRoller;
     private final SparkFlex topRoller;
-
-    private final double floorIdleSpeed = 0.1 * 12.0;
-    private final double floorIndexSpeed = 0.4 * 12.0;
-    private final double ceilingIdleSpeed = 0.2 * 12.0;
-    private final double ceilingIndexSpeed = 0.7 * 12.0;
 
     @SuppressWarnings("removal")
     public Indexer(int bottomRollerID, int topRollerID) {
@@ -33,18 +30,19 @@ public class Indexer extends SubsystemBase {
     }
 
     public Command idleIndex() {
-        // return runEnd(() -> {
-        //     bottomRoller.setVoltage(ceilingIdleSpeed);
-        //     topRoller.setVoltage(-ceilingIdleSpeed);
-        // }, () -> {}).withName("Idle index");
-        return run(() -> {});
+        return runEnd(() -> {
+            bottomRoller.setVoltage(Constants.Indexer.floorIdleVoltage);
+            topRoller.setVoltage(-Constants.Indexer.ceilingIdleVoltage);
+        }, () -> {}).withName("Idle index");
+        // return run(() -> {});
     }
 
     public Command index() {
         return runEnd(() -> {
-            bottomRoller.setVoltage(floorIndexSpeed);
-            topRoller.setVoltage(ceilingIndexSpeed);
+            bottomRoller.setVoltage(Constants.Indexer.floorIndexVoltage);
+            topRoller.setVoltage(Constants.Indexer.ceilingIndexVoltage);
         }, () -> {}).withName("Index");
+        // return run(() -> {});
     }
 
     @Override

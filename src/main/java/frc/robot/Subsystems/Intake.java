@@ -13,7 +13,6 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -24,9 +23,7 @@ import frc.robot.Constants;
 public class Intake extends SubsystemBase {
     private final SparkFlex roller;
     private final TalonFX arm;
-    // private final MotionMagicExpoVoltage armRequest;
 
-    private double rollerSpeed = 12;
 
     @SuppressWarnings("removal")
     public Intake(int armId, int rollerId) {
@@ -61,73 +58,49 @@ public class Intake extends SubsystemBase {
         motionMagicConfigs.MotionMagicCruiseVelocity = Constants.Intake.MotionMagicCruiseVelocity;
         motionMagicConfigs.MotionMagicAcceleration = Constants.Intake.MotionMagicAcceleration;
         // motionMagicConfigs.MotionMagicJerk = 300;
-        // motionMagicConfigs.MotionMagicCruiseVelocity = Constants.Intake.MotionMagicCruiseVelocity;
-        // motionMagicConfigs.MotionMagicExpo_kV = Constants.Intake.kV;
-        // motionMagicConfigs.MotionMagicExpo_kA = Constants.Intake.kA;
 
-        // double ForwardDegreeLimit = 30.0;
-        // double BackwardDegreeLimit = 30.0;
         armConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        armConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 0.08;
+        armConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Constants.Intake.ArmBottomPos;
         armConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        armConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -0.28;
+        armConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = Constants.Intake.ArmBackPos;
         armConfig.ClosedLoopGeneral.ContinuousWrap = false;
         armConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
 
         arm.getConfigurator().apply(armConfig);
-        // arm.getConfigurator().apply(s0);
-
-        // armRequest = new MotionMagicExpoVoltage(0);
 
         setDefaultCommand(deploy());
     }
 
-    // public void setArmPos(double rotations) {
-    //     double addOn = 0;
-    //     if (arm.getPosition() < )
-    //     final PositionVoltage request = new PositionVoltage(0);
-    //     arm.setControl(request.withPosition(rotations).withFeedForward(addOn));
-    // }
-
-    // public double smartkS(double target) {
-    //     double current = arm.getPosition().getValueAsDouble();
-    //     if (target-current > 0) {
-    //         return Constants.Intake.kS;
-    //     } 
-    //     else {
-    //         return 0;
-    //     } 
-    // }
 
     public Command deploy() {
         // Default command, motion profiled, ideallty feedforward contolled, deploy arm
         // For now we will manually retract
         // https://docs.wpilib.org/en/stable/docs/software/advanced-controls/introduction/tuning-vertical-arm.html
-        // return run(() -> roller.set(rollerSpeed)).withName("Deploy"); 
-        // return runEnd(() -> {
-        //     final MotionMagicVoltage request = new MotionMagicVoltage(0);
-        //     arm.setControl(request.withPosition(0.08));
-        //     roller.setVoltage(rollerSpeed);
-        // }, () -> {});
-        return run(() -> {});
+        return runEnd(() -> {
+            final MotionMagicVoltage request = new MotionMagicVoltage(0);
+            arm.setControl(request.withPosition(Constants.Intake.ArmBottomPos));
+            roller.setVoltage(Constants.Intake.rollerVoltage);
+        }, () -> {}).withName("Deploy");
+        // return run(() -> {});
     }
 
     public Command bump() {
         // Motion profiled, ideallty feedforward contolled, raise arm a bit, lower arm after raise
         return runEnd(() -> {
             final MotionMagicVoltage request = new MotionMagicVoltage(0);
-            arm.setControl(request.withPosition(0));
-            roller.setVoltage(rollerSpeed);
-        }, () -> {});
+            arm.setControl(request.withPosition(Constants.Intake.ArmHorizontalPos));
+            roller.setVoltage(Constants.Intake.rollerVoltage);
+        }, () -> {}).withName("Bump");
         // return run(() -> {});
     }
 
     public Command top() {
         return runEnd(() -> {
             final MotionMagicVoltage request = new MotionMagicVoltage(0);
-            arm.setControl(request.withPosition(-0.25));
-            roller.setVoltage(rollerSpeed);
-        }, () -> {});
+            arm.setControl(request.withPosition(Constants.Intake.ArmVerticalPos));
+            roller.setVoltage(Constants.Intake.rollerVoltage);
+        }, () -> {}).withName("Top");
+        // return run(() -> {});
     }
 
     // We _might_ need to temporarily slow down intake during shooting but that is to be determined later
