@@ -80,8 +80,8 @@ public class Drivetrain extends SubsystemBase {
             (speeds, feedforwards) -> driveFieldRelative(speeds, true),
 
             new PPHolonomicDriveController(
-                new PIDConstants(Constants.Drivetrain.SpeedKP, Constants.Drivetrain.SpeedKI, Constants.Drivetrain.SpeedKD),
-                new PIDConstants(Constants.Drivetrain.SteerKP, Constants.Drivetrain.SteerKI, Constants.Drivetrain.SteerKD)
+                new PIDConstants(Constants.Modules.SpeedKP, Constants.Modules.SpeedKI, Constants.Modules.SpeedKD),
+                new PIDConstants(Constants.Modules.SteerKP, Constants.Modules.SteerKI, Constants.Modules.SteerKD)
             ),
             config,
             () -> {
