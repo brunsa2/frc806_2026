@@ -4,64 +4,36 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
+import static edu.wpi.first.wpilibj2.command.Commands.parallel;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Subsystems.DrivetrainSubsystem;
+import frc.robot.Subsystems.Drivetrain;
+import frc.robot.Subsystems.Indexer;
+import frc.robot.Subsystems.Shooter;
+import frc.robot.Subsystems.Intake;
 
 public class RobotContainer {
+    public CommandXboxController driveController = new CommandXboxController(0);
+    CommandXboxController coDriveController = new CommandXboxController(1);
+    CommandXboxController ohShitController = new CommandXboxController(2);
 
-  //private Robot robot;
+    private final Trigger driveRightTrigger = driveController.rightTrigger(0.5);
 
-  
-
-  SendableChooser<Command> m_chooser = new SendableChooser<>();
-
-
-  CommandXboxController DriveController = new CommandXboxController(0);
-  //SmartDashboard
-  //CommandXboxController coDriveController = new CommandXboxController(1);
-  //Trigger xButton = DriveController.x();  
-  //Trigger yButton = DriveController.y();  
-  //Trigger bButton = DriveController.b();  
-  //Trigger ltrigger = DriveController.leftTrigger();
-  //Trigger rtrigger = DriveController.rightTrigger();
-  //Trigger noteAquired = new Trigger(IntakeSubsystem.getInstance()::getHasNote);
-  //Trigger dPadUp = DriveController.povUp();
-  //Trigger dPadDown = DriveController.povDown();
-
-  public RobotContainer() {
-
-    //robot = new_robot;
-    configureBindings();
-    //m_chooser.setDefaultOption("taxi", robot.taxi);
-    //m_chooser.addOption("shoot", robot.shoot);
-    //m_chooser.addOption("shoot and taxi", robot.shoot.andThen(robot.taxi));
-    //SmartDashboard.putData(m_chooser);
-  }
-
-  private void configureBindings() {
-
-    //xButton.onTrue(new IntakeSetAng(IntakeAng.Speaker));
-    //yButton.onTrue(new IntakeSetAng(IntakeAng.Amp));
-    //bButton.onTrue(new IntakeSetAng(IntakeAng.Extended));
-
-    //ltrigger.and(noteAquired.negate())
-    //  .whileTrue(new IntakeSetSpeed(IntakeSpeed.In));
-    //rtrigger.and(IntakeSubsystem.getInstance()::getAtSetpoint)
-    //  .whileTrue(new IntakeSetSpeed(IntakeSpeed.Out));
-
+    public final Drivetrain drivetrain = new Drivetrain(Constants.Drivetrain.moduleArray, driveController);
     
+    public final Indexer indexer = new Indexer(Constants.Indexer.BottomRollerID, Constants.Indexer.TopRollerID);
+    public final Shooter shooter = new Shooter(Constants.Shooter.MotorID);
+    public final Intake intake = new Intake(Constants.Intake.ArmID, Constants.Intake.RollerID);
 
-    //dPadUp.onTrue(new ClimberExtend());
-    //dPadDown.onTrue(new ClimberRetract());
-}
+    public RobotContainer() {
+        configureBindings();
+        SmartDashboard.putData(CommandScheduler.getInstance());
+    }
 
-  public Command getAutonomousCommand() {
-    return m_chooser.getSelected();
-  }
+    private void configureBindings() {
+        driveRightTrigger.whileTrue(parallel(indexer.index(), shooter.shoot()));
+    }
 }

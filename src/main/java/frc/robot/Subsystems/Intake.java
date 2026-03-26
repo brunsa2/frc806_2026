@@ -1,137 +1,46 @@
 package frc.robot.Subsystems;
 
-import com.ctre.phoenix6.hardware.CANcoder;
-import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.SparkAbsoluteEncoder;
-import com.revrobotics.spark.SparkClosedLoopController;
-import com.revrobotics.spark.SparkBase.ControlType;
-import com.revrobotics.spark.SparkBase.PersistMode;
-import com.revrobotics.spark.SparkBase.ResetMode;
-import com.revrobotics.spark.config.SparkMaxConfig;
-import com.revrobotics.spark.config.AlternateEncoderConfig;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkFlexConfig;
 
-
-import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
-import edu.wpi.first.math.filter.SlewRateLimiter;
-import frc.robot.Utils;
-
-import frc.robot.IO.SparkMaxIO;
-
-enum IntakeState { 
-    INTAKE_STATE_UNKNOWN,
-    INTAKE_STATE_RETRACTED,
-    INTAKE_STATE_AMP,
-    INTAKE_STATE_EXTENDED,
-    INTAKE_STATE_MOVING
-}
-
 
 public class Intake extends SubsystemBase {
-    private final SparkMaxIO angleMotorIo;
-    private final SparkMaxIO intakeMotorIo;
-    private final PIDController angController = new PIDController(1.5, 0, 0);
-    private final SlewRateLimiter angLimiter = new SlewRateLimiter(2);
+    private final SparkFlex roller;
 
+    private double rollerSpeed = 0.5;
 
+    @SuppressWarnings("removal")
+    public Intake(int armId, int rollerId) {
+        roller = new SparkFlex(rollerId, MotorType.kBrushless);
 
-    private boolean manualIntakeControl = false;
-    private final double intakeRotationSpeed = 0.2;
-    private double manualMovementSpeed = 0.0;
-    private IntakeState currentIntakeState;
-    private IntakeState desiredIntakeState;
-    public Intake(SparkMaxIO angleMotorIo, SparkMaxIO intakeMotorIo) {
-        this.angleMotorIo = angleMotorIo;
-        this.intakeMotorIo = intakeMotorIo;
-        currentIntakeState = IntakeState.INTAKE_STATE_UNKNOWN;
-        desiredIntakeState = IntakeState.INTAKE_STATE_RETRACTED;
+        SparkFlexConfig config = new SparkFlexConfig();
+        config.idleMode(IdleMode.kBrake).smartCurrentLimit(30);
+
+        roller.configure(config, SparkFlex.ResetMode.kResetSafeParameters, SparkFlex.PersistMode.kPersistParameters);
+
+        setDefaultCommand(deploy());
     }
 
-    private void UpdateState(){
-        double encoderAngle = angleMotorIo.getPosition();
-        if (manualIntakeControl && manualMovementSpeed > 0){
-            currentIntakeState = IntakeState.INTAKE_STATE_MOVING;
-            return;
-        }
-
-        if (Utils.IsDoubleApproximately(encoderAngle, Constants.Intake.retractedSetPoint, Constants.Delta)){
-            currentIntakeState = IntakeState.INTAKE_STATE_RETRACTED;
-        } else if (Utils.IsDoubleApproximately(encoderAngle, Constants.Intake.ampSetPoint, 0.3)){
-            currentIntakeState = IntakeState.INTAKE_STATE_AMP;
-        } else if (Utils.IsDoubleApproximately(encoderAngle, Constants.Intake.extendedSetPoint, Constants.Delta)){
-            currentIntakeState = IntakeState.INTAKE_STATE_EXTENDED;
-        } else {
-            currentIntakeState = IntakeState.INTAKE_STATE_MOVING;
-        }
+    public Command deploy() {
+        // Default command, motion profiled, ideallty feedforward contolled, deploy arm
+        // For now we will manually retract
+        // https://docs.wpilib.org/en/stable/docs/software/advanced-controls/introduction/tuning-vertical-arm.html
+        return run(() -> roller.set(rollerSpeed)).withName("Deploy"); 
     }
 
-    private double GetDesiredPosition(IntakeState intakeState){
-        if (intakeState == IntakeState.INTAKE_STATE_RETRACTED){
-            return Constants.Intake.retractedSetPoint;
-        } else if (intakeState == IntakeState.INTAKE_STATE_AMP){
-            return Constants.Intake.ampSetPoint;
-        } else if (intakeState == IntakeState.INTAKE_STATE_EXTENDED){
-            return Constants.Intake.extendedSetPoint;
-        }
-        return Constants.Intake.retractedSetPoint;
-    }
-    private void SetDesiredState(IntakeState newDesiredIntakeState){
-        manualIntakeControl = false;
-        desiredIntakeState = newDesiredIntakeState;
-        angController.setSetpoint(GetDesiredPosition(desiredIntakeState));
+    public Command bump() {
+        // Motion profiled, ideallty feedforward contolled, raise arm a bit, lower arm after raise
+        return runOnce(() -> {});
     }
 
-    private void ManualUpdate(double speed){
-        manualIntakeControl = true;
-        manualMovementSpeed = speed;
-    }
+    // We _might_ need to temporarily slow down intake during shooting but that is to be determined later
 
-    private void RunLoop(){
-        if (manualIntakeControl){
-            angleMotorIo.setSpeed(manualMovementSpeed);
-        } else {
-            if (currentIntakeState == desiredIntakeState){
-                angleMotorIo.setSpeed(0);
-            } else {
-                angleMotorIo.setSpeed(angLimiter.calculate(angController.calculate(angleMotorIo.getPosition())));
-            }
-        }
-        UpdateState();
+    @Override
+    public void initSendable(SendableBuilder builder) {
     }
-
-    public IntakeState Update(
-        boolean retractButtonPressed, boolean ampButtonPressed,
-      boolean extendButtonPressed, boolean raiseButtonPressed, 
-      boolean lowerButtonPressed, double rightTriggerAxis, double leftTriggerAxis,
-      double ampShootSpeed, double speakerShootSpeed){
-        if (retractButtonPressed){
-            SetDesiredState(IntakeState.INTAKE_STATE_RETRACTED);
-        } else if (ampButtonPressed){
-            SetDesiredState(IntakeState.INTAKE_STATE_AMP);
-        } else if (extendButtonPressed){
-            SetDesiredState(IntakeState.INTAKE_STATE_EXTENDED);
-        } else if (raiseButtonPressed){
-            ManualUpdate(intakeRotationSpeed);
-        } else if (lowerButtonPressed){
-            ManualUpdate(-intakeRotationSpeed);
-        } else if (manualIntakeControl){
-            ManualUpdate(0);
-        }
-        RunLoop();
-        if (rightTriggerAxis > 0.5){
-            if (currentIntakeState == IntakeState.INTAKE_STATE_AMP){
-                intakeMotorIo.setSpeed(ampShootSpeed);
-            } else {
-                intakeMotorIo.setSpeed(speakerShootSpeed);
-            }
-        } else {
-            intakeMotorIo.setSpeed(leftTriggerAxis * 0.5);
-        }
-        return currentIntakeState;
-    }
-
 }
