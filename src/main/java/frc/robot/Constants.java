@@ -23,9 +23,7 @@ public class Constants {
 
     public static final int PigeonID = 22;   
 
-    public static double controllerDeadband = 0.15; 
-
-    public interface Modules{
+    public interface Drivetrain {
         public static final double SpeedKP = 0.001, SpeedKI = 0, SpeedKD = 0.0005;
         public static final double SteerKP = 1.5, SteerKI = 0, SteerKD = 0;
         
@@ -43,7 +41,16 @@ public class Constants {
             new SwerveModule(RearLeftDriveID, RearLeftSteerID, RearLeftEncoderID, false),
             new SwerveModule(RearRightDriveID, RearRightSteerID, RearRightEncoderID, true)
         };
-        
+
+        public static double ControllerDeadband = 0.15;
+
+        public static final double TranslationPow = 3;
+        public static final double RotationPow = 3;
+
+        public static final double SlowFactor = 3;
+        public static final double SlowFactorOffset = 1;
+
+        public static final double SteerMotorSlewRate = 20;
     }
 
     public interface Indexer {
@@ -85,16 +92,6 @@ public class Constants {
         public static final double ArmVerticalPos = -0.25;
         public static final double ArmBackPos = -0.28;
         
-    }
-
-    public interface Drivetrain {
-        public static final double TranslationPow = 3;
-        public static final double RotationPow = 3;
-
-        public static final double SlowFactor = 3;
-        public static final double SlowFactorOffset = 1;
-
-        public static final double SteerMotorSlewRate = 20;
     }
 
     public interface Motion {

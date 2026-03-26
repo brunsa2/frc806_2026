@@ -20,27 +20,26 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import static edu.wpi.first.wpilibj2.command.Commands.none;
 import static edu.wpi.first.wpilibj2.command.Commands.parallel;
 import static edu.wpi.first.wpilibj2.command.Commands.waitSeconds;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants;
-import frc.robot.Commands.DriveFieldRelative;
 
 public class Drivetrain extends SubsystemBase {
-
-    // ADIS16470_IMU IMU;
-    boolean isWaitingToCalibrate;
-    Pigeon2 IMU;
+    private CommandXboxController controller;
+    private boolean isWaitingToCalibrate;
+    private Pigeon2 imu;
     public SwerveModule[] modules;
-    SwerveDriveKinematics kinematics;
-    SwerveDriveOdometry odometry;
-    ChassisSpeeds m_chassisSpeeds;
-    double translationMaxAccelerationMetersPerSecondSquared = 25;
-    double rotationMaxAccelerationRadiansPerSecondSquared = 50;
-    SlewRateLimiter translationXLimiter = new SlewRateLimiter(translationMaxAccelerationMetersPerSecondSquared);
-    SlewRateLimiter translationYLimiter = new SlewRateLimiter(translationMaxAccelerationMetersPerSecondSquared);
-    SlewRateLimiter rotationLimiter = new SlewRateLimiter(rotationMaxAccelerationRadiansPerSecondSquared);
+    private SwerveDriveKinematics kinematics;
+    private SwerveDriveOdometry odometry;
+    private ChassisSpeeds m_chassisSpeeds;
+    private double translationMaxAccelerationMetersPerSecondSquared = 25;
+    private double rotationMaxAccelerationRadiansPerSecondSquared = 50;
+    private SlewRateLimiter translationXLimiter = new SlewRateLimiter(translationMaxAccelerationMetersPerSecondSquared);
+    private SlewRateLimiter translationYLimiter = new SlewRateLimiter(translationMaxAccelerationMetersPerSecondSquared);
+    private SlewRateLimiter rotationLimiter = new SlewRateLimiter(rotationMaxAccelerationRadiansPerSecondSquared);
     private final StructArrayPublisher<SwerveModuleState> statePublisher;
 
     private final Alert willCalibrateAlert = new Alert("Robot will enter drivetrain calibration when re-enabled", AlertType.kInfo);
@@ -48,35 +47,27 @@ public class Drivetrain extends SubsystemBase {
     
     public Drivetrain(SwerveModule[] modules, CommandXboxController controller) {
         // IMU = new ADIS16470_IMU();
-        IMU = new Pigeon2(Constants.PigeonID, new CANBus("*"));
+        imu = new Pigeon2(Constants.PigeonID, new CANBus("*"));
         this.modules = modules;
         kinematics = new SwerveDriveKinematics(Constants.moduleLocations);
         odometry = new SwerveDriveOdometry(kinematics, getGyroscopeRotation(), getModulePositions());
         statePublisher = NetworkTableInstance.getDefault().getStructArrayTopic("SwerveModules", SwerveModuleState.struct).publish();
-        setDefaultCommand(new DriveFieldRelative(this, controller));
+        setDefaultCommand(manualDriveFieldRelative());
+        // TODO: We should inject axes rather than an entire controller
+        this.controller = controller;
 
         SmartDashboard.putData(enableCalibration());
         SmartDashboard.putData(calibrate());
         SmartDashboard.putData(cancelCalibration());
-        SmartDashboard.putData(this);
-
-        
+        SmartDashboard.putData(this);        
     }
 
     public Rotation2d getGyroscopeRotation() {
-        //return Rotation2d.fromDegrees(IMU.get());
-    
-        // return Rotation2d.fromDegrees(-IMU.getAngle(IMUAxis.kY));
-        // return Rotation2d.fromDegrees(IMU.getAngle());
-        return Rotation2d.fromDegrees(IMU.getYaw().getValueAsDouble());
+        return Rotation2d.fromDegrees(imu.getYaw().getValueAsDouble());
     }
 
-    // public void calibrateGyro(){
-    //     IMU.calibrate();   
-    //  }
-
     public void resetGyro() {
-        IMU.reset();
+        imu.reset();
     }
 
     public Command getInitialCommand() {
@@ -114,35 +105,80 @@ public class Drivetrain extends SubsystemBase {
         return runOnce(() -> isWaitingToCalibrate = false ).withName("Canceling calibration");
     }
 
-    public void drive(ChassisSpeeds  chassisSpeeds){
-        setModuleTargetStates(chassisSpeeds, true);
+    public Command manualDrive() {
+        return run(() -> setSpeeds(getManualChassisSpeeds())).withName("Drive");
     }
 
-    public void driveFieldRelative(ChassisSpeeds chassisSpeeds, boolean isCosineCompensated){
+    public Command manualDriveFieldRelative() {
+        return run(() -> setFieldRelativeSpeeds(getManualChassisSpeeds())).withName("Drive Field Relative");
+    }
+
+    public Command driveToNearestAprilTag(double x, double y, double theta) {
+        return none().withName("Drive to Nearest April Tag");
+    }
+
+    public Command manualDriveFieldRelativeWithSteerAimToNearestAprilTag() {
+        return none().withName("Drive Field Relative with Steer Aim to Nearest April Tag");
+    }
+
+    @Override
+    public void periodic() {
+        if (controller.start().getAsBoolean()){
+            resetGyro();
+        }
+    }
+
+    private ChassisSpeeds getManualChassisSpeeds() {
+        double x = controller.getLeftX(), y = controller.getLeftY(), theta = controller.getRightX();
+        
+        if (Math.hypot(x, y) < Constants.Drivetrain.ControllerDeadband) {
+            x = 0;
+            y = 0;
+        }
+
+        if (Math.abs(theta) < Constants.Drivetrain.ControllerDeadband) {
+            theta = 0.0;
+        }
+
+        x = (x > 0) ? Math.abs(Math.pow(x, Constants.Drivetrain.TranslationPow)) : -Math.abs(Math.pow(x, Constants.Drivetrain.TranslationPow));
+        y = (y > 0) ? Math.abs(Math.pow(y, Constants.Drivetrain.TranslationPow)) : -Math.abs(Math.pow(y, Constants.Drivetrain.TranslationPow));
+        theta = (theta > 0) ? Math.abs(Math.pow(theta, Constants.Drivetrain.RotationPow)) : -Math.abs(Math.pow(theta, Constants.Drivetrain.RotationPow));
+
+        double slowModeFactor = (controller.getLeftTriggerAxis() * Constants.Drivetrain.SlowFactor) + Constants.Drivetrain.SlowFactorOffset;
+
+        return new ChassisSpeeds(
+            (y * Constants.attainableMaxTranslationalSpeedMPS) / slowModeFactor, 
+            (x * Constants.attainableMaxTranslationalSpeedMPS) / slowModeFactor, 
+            -(theta * Constants.attainableMaxRotationalVelocityRPS) / slowModeFactor
+        );
+    }
+
+    public void setSpeeds(ChassisSpeeds  chassisSpeeds) {
+        setModuleTargetStates(chassisSpeeds);
+    }
+
+    public void setFieldRelativeSpeeds(ChassisSpeeds chassisSpeeds){
         chassisSpeeds.vxMetersPerSecond = translationXLimiter.calculate(chassisSpeeds.vxMetersPerSecond);
         chassisSpeeds.vyMetersPerSecond = translationYLimiter.calculate(chassisSpeeds.vyMetersPerSecond);
         chassisSpeeds.omegaRadiansPerSecond = rotationLimiter.calculate(chassisSpeeds.omegaRadiansPerSecond);
 
-        // SmartDashboard.putNumber("gyro", getGyroscopeRotation().getDegrees());
-
-        setModuleTargetStates(ChassisSpeeds.fromFieldRelativeSpeeds(chassisSpeeds, getGyroscopeRotation()), isCosineCompensated);
-        // setModuleTargetStates(ChassisSpeeds.fromFieldRelativeSpeeds(chassisSpeeds, getGyroscopeRotation()));
+        setModuleTargetStates(ChassisSpeeds.fromFieldRelativeSpeeds(chassisSpeeds, getGyroscopeRotation()));
     }
 
-    public void setModuleTargetStates(ChassisSpeeds chassisSpeeds, boolean isCosineCompensated) {
+    public void setModuleTargetStates(ChassisSpeeds chassisSpeeds) {
         SwerveModuleState[] targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
         SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, Constants.attainableMaxModuleSpeedMPS);
         for (int i = 0; i < modules.length; ++i) {
             targetStates[i].optimize(Rotation2d.fromRotations(modules[i].getModuleAngRotations()));
-            modules[i].setTargetState(targetStates[i], isCosineCompensated);
+            modules[i].setTargetState(targetStates[i]);
         }
     }
 
-    public SwerveModulePosition[] getModulePositions(){
+    public SwerveModulePosition[] getModulePositions() {
         return new SwerveModulePosition[] {modules[0].getModulePosition(),modules[1].getModulePosition(),modules[2].getModulePosition(),modules[3].getModulePosition()};
     }
 
-    public ChassisSpeeds getChasisSpeed(){
+    public ChassisSpeeds getChasisSpeed() {
         return kinematics.toChassisSpeeds(
             modules[0].getSwerveModuleState(),
             modules[1].getSwerveModuleState(),

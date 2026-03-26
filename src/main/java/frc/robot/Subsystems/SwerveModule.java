@@ -73,12 +73,12 @@ public class SwerveModule extends SubsystemBase{
         //driveController.setI(Constants.Modules.SpeedKI);
         //driveController.setD(Constants.Modules.SpeedKD);
 
-        steerController = new PIDController(Constants.Modules.SteerKP, Constants.Modules.SteerKI, Constants.Modules.SteerKD);
+        steerController = new PIDController(Constants.Drivetrain.SteerKP, Constants.Drivetrain.SteerKI, Constants.Drivetrain.SteerKD);
         steerController.enableContinuousInput(0 - Preferences.getDouble(EncoderPreferenceKey + encoderID, 0), 1 - Preferences.getDouble(EncoderPreferenceKey + encoderID, 0));
 
     }
 
-    public void setTargetState(SwerveModuleState targetState, boolean isCosineCompensated) {
+    public void setTargetState(SwerveModuleState targetState) {
         //PID experement
         //steerMotor.set(-steerController.calculate(getModuleAngRotations(),targetState.angle.getRotations()));
         //driveController.setReference(targetState.speedMetersPerSecond / DRIVE_VELOCITY_CONVERSION, ControlType.kVelocity);
@@ -86,9 +86,7 @@ public class SwerveModule extends SubsystemBase{
         double currentAngle = getModuleAngRotations();
         double steerMotorCommand = steerController.calculate(currentAngle, targetState.angle.getRotations());
         steerMotor.set(steerLimiter.calculate(steerMotorCommand));
-        if (isCosineCompensated) {
-            targetState.speedMetersPerSecond *= targetState.angle.minus(new Rotation2d(currentAngle*2*Math.PI)).getCos();
-        }
+        targetState.speedMetersPerSecond *= targetState.angle.minus(new Rotation2d(currentAngle*2*Math.PI)).getCos();
         driveMotor.set(targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS); 
     }
 
