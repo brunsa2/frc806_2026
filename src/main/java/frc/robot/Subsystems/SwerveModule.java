@@ -7,6 +7,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -51,7 +52,7 @@ public class SwerveModule extends SubsystemBase{
         driveMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         driveMotorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         driveMotorConfig.CurrentLimits.SupplyCurrentLimit = 40;
-        driveMotorConfig.Feedback.SensorToMechanismRatio = DRIVE_POSITION_CONVERSION;
+        driveMotorConfig.Feedback.SensorToMechanismRatio = 1/DRIVE_POSITION_CONVERSION;
         if (invertDirection) {
             driveMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         }
@@ -80,6 +81,8 @@ public class SwerveModule extends SubsystemBase{
 
     }
 
+    private SlewRateLimiter srl = new SlewRateLimiter(0.8);
+
     public void setTargetState(SwerveModuleState targetState) {
         //PID experement
         //steerMotor.set(-steerController.calculate(getModuleAngRotations(),targetState.angle.getRotations()));
@@ -90,7 +93,9 @@ public class SwerveModule extends SubsystemBase{
         steerMotor.set(steerLimiter.calculate(steerMotorCommand));
         // Cosine compensation: drive wheel slower when it's not rotated to the correct position yet
         targetState.speedMetersPerSecond *= targetState.angle.minus(new Rotation2d(currentAngle*2*Math.PI)).getCos();
-        driveMotor.set(targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS); 
+        var clampedSpeed = MathUtil.clamp(targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS, -0.1, 0.1);
+        var slewedSpeed = srl.calculate(clampedSpeed);
+        driveMotor.set(slewedSpeed); 
     }
 
     public Command calibrate() {
@@ -101,7 +106,7 @@ public class SwerveModule extends SubsystemBase{
     }
 
     public void periodic() {
-        // SmartDashboard.putNumber("S" + driveMotorID, getModuleAngRotations());
+        SmartDashboard.putNumber("S" + driveMotorID, driveMotor.getPosition().getValueAsDouble());
     }
 
     public double getModuleAngRotations() {

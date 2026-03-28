@@ -78,7 +78,7 @@ public class Camera extends SubsystemBase {
             positionSupplier.get(),
             new Pose2d(),
             VecBuilder.fill(Constants.Drivetrain.Odometry.PositionStdDev, Constants.Drivetrain.Odometry.PositionStdDev, Constants.Drivetrain.Odometry.AngleStdDev),
-            VecBuilder.fill(Constants.Drivetrain.Vision.PositionStdDev, Constants.Drivetrain.Vision.PositionStdDev, Constants.Drivetrain.Vision.PositionStdDev)
+            VecBuilder.fill(Constants.Drivetrain.Vision.PositionStdDev, Constants.Drivetrain.Vision.PositionStdDev, 999999)
         );
 
 
@@ -92,7 +92,11 @@ public class Camera extends SubsystemBase {
             if (visionEstimate.isEmpty()) {
                 visionEstimate = photonEstimator.estimateLowestAmbiguityPose(result);
             }
+            
+
             Matrix<N3, N1> stdDevs = visionEstimate.map(e -> getStdDevs(e, result.getTargets())).orElse(Constants.Camera.SingleTagStdDevs);
+
+            SmartDashboard.putNumber("stddev", stdDevs.get(0, 0));
 
             visionEstimate.ifPresent(e -> {
                 poseEstimator.addVisionMeasurement(e.estimatedPose.toPose2d(), e.timestampSeconds, stdDevs);
@@ -102,6 +106,9 @@ public class Camera extends SubsystemBase {
         poseEstimator.update(rotationSupplier.get(), positionSupplier.get());
 
         m_field.setRobotPose(poseEstimator.getEstimatedPosition());
+        SmartDashboard.putNumber("X", poseEstimator.getEstimatedPosition().getX());
+        SmartDashboard.putNumber("Y", poseEstimator.getEstimatedPosition().getY());
+        SmartDashboard.putNumber("T", poseEstimator.getEstimatedPosition().getRotation().getDegrees());
     }
 
     private Matrix<N3, N1> getStdDevs(EstimatedRobotPose estimatedPose, List<PhotonTrackedTarget> targets) {

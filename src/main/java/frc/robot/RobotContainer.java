@@ -7,6 +7,9 @@ package frc.robot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import static edu.wpi.first.wpilibj2.command.Commands.parallel;
+
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -26,9 +29,9 @@ public class RobotContainer {
     public final Drivetrain drivetrain = new Drivetrain(Constants.Modules.moduleArray, driveController);
     public final Camera camera = new Camera(Constants.Camera.Name, Constants.Camera.MaxTrackedTargets, drivetrain::getKinematics, drivetrain::getGyroscopeRotation, drivetrain::getModulePositions);
     
-    public final Indexer indexer = new Indexer(Constants.Indexer.BottomRollerID, Constants.Indexer.TopRollerID);
-    public final Shooter shooter = new Shooter(Constants.Shooter.MotorID);
-    public final Intake intake = new Intake(Constants.Intake.ArmID, Constants.Intake.RollerID);
+    // public final Indexer indexer = new Indexer(Constants.Indexer.BottomRollerID, Constants.Indexer.TopRollerID);
+    // public final Shooter shooter = new Shooter(Constants.Shooter.MotorID);
+    // public final Intake intake = new Intake(Constants.Intake.ArmID, Constants.Intake.RollerID);
 
     public RobotContainer() {
         drivetrain.setPose2dSupplier(camera::getPose);
@@ -38,6 +41,7 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
-        driveRightTrigger.whileTrue(parallel(indexer.index(), shooter.shoot()));
+        // driveRightTrigger.whileTrue(parallel(indexer.index(), shooter.shoot()));
+        driveRightTrigger.whileTrue(drivetrain.aimAtTag(7, new Translation2d(-1, -0.5), Rotation2d.fromDegrees(-135)));
     }
 }

@@ -10,7 +10,9 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -67,9 +69,9 @@ public class Drivetrain extends SubsystemBase {
     // SwerveDrivePoseEstimator aimingPoseEstimator;
     // double currentVisionTime = 0;
     // double lastVisionTime = 0;
-    private final PIDController visionForwardBackController = new PIDController(0.1, 0, 0);
-    private final PIDController visionSidewaysController = new PIDController(0.1, 0, 0);
-    private final PIDController visionRotationsController = new PIDController(0.1, 0, 0);
+    private final PIDController visionForwardBackController = new PIDController(2.5, 0, 0);
+    private final PIDController visionSidewaysController = new PIDController(2.5, 0, 0);
+    private final PIDController visionRotationsController = new PIDController(0, 0, 0);
 
     private Supplier<Pose2d> pose2dSupplier;
 
@@ -86,6 +88,7 @@ public class Drivetrain extends SubsystemBase {
         odometry = new SwerveDriveOdometry(kinematics, getGyroscopeRotation(), getModulePositions());
         statePublisher = NetworkTableInstance.getDefault().getStructArrayTopic("SwerveModules", SwerveModuleState.struct).publish();
         setDefaultCommand(new DriveFieldRelative(this, controller));
+        // setDefaultCommand();
 
         SmartDashboard.putData(enableCalibration());
         SmartDashboard.putData(calibrate());
@@ -152,6 +155,34 @@ public class Drivetrain extends SubsystemBase {
 
     public Command cancelCalibration() {
         return runOnce(() -> isWaitingToCalibrate = false ).withName("Canceling calibration");
+    }
+    
+    public Command aimAtTag(int tagId, Translation2d offset, Rotation2d theta) {
+        var tag = Constants.Camera.FieldLayout.getTagPose(tagId);
+        return tag.map(t -> {
+            var tagPose2d = t.toPose2d();
+            var tagToTarget = new Transform2d(offset.unaryMinus(), theta);
+            var targetPose = tagPose2d.transformBy(tagToTarget);
+
+            SmartDashboard.putNumber("TX", targetPose.getX());
+            SmartDashboard.putNumber("TY", targetPose.getY());
+            SmartDashboard.putNumber("TT", targetPose.getRotation().getDegrees());
+
+            return run(()-> {
+                var robotPose = pose2dSupplier.get();
+
+                var forwardVelocity = -visionForwardBackController.calculate(robotPose.getX(), targetPose.getX());
+                var sidewaysVelocity = -visionSidewaysController.calculate(robotPose.getY(), targetPose.getY());
+                var angularVelcoity = visionRotationsController.calculate(robotPose.getRotation().getRotations(), targetPose.getRotation().getRotations());
+
+                var speeds = new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelcoity);
+
+                drive(speeds);
+                SmartDashboard.putNumber("F", forwardVelocity);
+                SmartDashboard.putNumber("S", sidewaysVelocity);
+                SmartDashboard.putNumber("A", angularVelcoity);
+            });
+        }).orElse(Commands.none());
     }
 
     public void drive(ChassisSpeeds chassisSpeeds){
