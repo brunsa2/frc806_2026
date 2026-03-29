@@ -7,6 +7,9 @@ package frc.robot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import static edu.wpi.first.wpilibj2.command.Commands.parallel;
+
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -40,8 +43,9 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
-        driveRightTrigger.whileTrue(parallel(indexer.index(), shooter.shoot()));
-        drivekRightBumper.toggleOnTrue(intake.top());
-        drivekLeftBumper.whileTrue(intake.bump());
+        // driveRightTrigger.whileTrue(parallel(indexer.index(), shooter.shoot()));
+        // drivekRightBumper.toggleOnTrue(intake.top());
+        // drivekLeftBumper.whileTrue(intake.bump());
+        driveRightTrigger.whileTrue(drivetrain.alignToTag(7, new Translation2d(-1, -0.5), Rotation2d.fromDegrees(-135)));
     }
 }

@@ -1,9 +1,14 @@
 package frc.robot;
 
+import java.util.List;
+
+import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -51,8 +56,21 @@ public class Constants {
             new Translation3d(0, 0, 0),
             new Rotation3d(0, 0, 0)
         );
-        public static final AprilTagFieldLayout FieldLayout =
-                AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+        
+        List<AprilTag> Tags = List.of(
+            new AprilTag(7, new Pose3d(
+                new Translation3d(5, 2.5, 0.3048),
+                new Rotation3d(0, 0, Rotation2d.fromDegrees(180).getRadians())
+            ))
+        );
+
+        // public static final AprilTagFieldLayout FieldLayout =
+        //         AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+        public static final AprilTagFieldLayout FieldLayout = new AprilTagFieldLayout(
+            Tags,
+            5,
+            5
+        );
     }
 
     public interface Drivetrain {

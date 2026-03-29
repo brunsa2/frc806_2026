@@ -2,14 +2,21 @@ package frc.robot.Subsystems;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.hardware.Pigeon2;
+
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.wpilibj.Alert;
@@ -17,10 +24,14 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import static edu.wpi.first.wpilibj2.command.Commands.none;
 import static edu.wpi.first.wpilibj2.command.Commands.parallel;
+import static edu.wpi.first.wpilibj2.command.Commands.run;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants;
+import static edu.wpi.first.wpilibj.Timer.getFPGATimestamp;
 
 public class Drivetrain extends SubsystemBase {
     private CommandXboxController controller;
@@ -37,9 +48,24 @@ public class Drivetrain extends SubsystemBase {
     private SlewRateLimiter rotationLimiter = new SlewRateLimiter(rotationMaxAccelerationRadiansPerSecondSquared);
     private final StructArrayPublisher<SwerveModuleState> statePublisher;
     private Pose pose;
+    // TODO: these motional profiles are front/back and left/right which means going
+    // on a diagonal can go faster. We need a 2D aware motion profiler (this might be provided
+    // by custom path planning later on...)
+    private final TrapezoidProfile lateralProfile =
+        new TrapezoidProfile(new TrapezoidProfile.Constraints(0.1, 0.1));
+    private final TrapezoidProfile angularProfile =
+        new TrapezoidProfile(new TrapezoidProfile.Constraints(0.1, 0.1));
+    private TrapezoidProfile.State forwardProfileState;
+    private TrapezoidProfile.State sidewaysProfileState;
+    private TrapezoidProfile.State angularProfileState;
+    private final PIDController visionForwardBackController = new PIDController(2.5, 0, 0);
+    private final PIDController visionSidewaysController = new PIDController(2.5, 0, 0);
+    private final PIDController visionRotationsController = new PIDController(0, 0, 0);
 
     private final Alert willCalibrateAlert = new Alert("Robot will enter drivetrain calibration when re-enabled", AlertType.kInfo);
     private final Alert calibratingAlert = new Alert("Drivetrain can be calibrated. Align wheels when disabled and calibrate or cancel", AlertType.kInfo);
+
+    private double timestamp;
     
     public Drivetrain(SwerveModule[] modules, CommandXboxController controller) {
         imu = new Pigeon2(Constants.PigeonID, new CANBus("*"));
@@ -116,8 +142,41 @@ public class Drivetrain extends SubsystemBase {
         return run(() -> setFieldRelativeSpeeds(getManualChassisSpeeds())).withName("Drive Field Relative");
     }
 
-    public Command driveToNearestAprilTag(double x, double y, double theta) {
-        return none().withName("Drive to Nearest April Tag");
+    public Command alignToTag(int tagId, Translation2d offset, Rotation2d theta) {
+        var tag = Constants.Pose.FieldLayout.getTagPose(tagId);
+        return tag.map(t -> {
+            var tagPose2d = t.toPose2d();
+            var tagToTarget = new Transform2d(offset.unaryMinus(), theta);
+            var targetPose = tagPose2d.transformBy(tagToTarget);
+
+            var initialPose = pose.getPose();
+            forwardProfileState = new TrapezoidProfile.State(initialPose.getX(), 0.0);
+            sidewaysProfileState = new TrapezoidProfile.State(initialPose.getY(), 0.0);
+            angularProfileState = new TrapezoidProfile.State(initialPose.getRotation().getRotations(), 0.0);
+
+            timestamp = getFPGATimestamp();
+
+            return run(()-> {
+                var robotPose = pose.getPose();
+
+                double newTimestamp = getFPGATimestamp();
+                double elapsedTime = newTimestamp - timestamp;
+                timestamp = newTimestamp;
+
+                forwardProfileState = lateralProfile.calculate(elapsedTime, forwardProfileState, new TrapezoidProfile.State(targetPose.getX(), 0));
+                sidewaysProfileState = lateralProfile.calculate(elapsedTime, sidewaysProfileState, new TrapezoidProfile.State(targetPose.getY(), 0));
+                // Note: this might not work for angular since it doesn't support continuous motion
+                angularProfileState = angularProfile.calculate(elapsedTime, angularProfileState, new TrapezoidProfile.State(robotPose.getRotation().getRotations(), 0));
+
+                var forwardVelocity = -visionForwardBackController.calculate(robotPose.getX(), forwardProfileState.position);
+                var sidewaysVelocity = -visionSidewaysController.calculate(robotPose.getY(), sidewaysProfileState.position);
+                var angularVelcoity = -visionRotationsController.calculate(robotPose.getRotation().getRotations(), targetPose.getRotation().getRotations());
+
+                var speeds = new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelcoity);
+
+                setSpeeds(speeds);
+            });
+        }).orElse(Commands.none());
     }
 
     public Command manualDriveFieldRelativeWithSteerAimToNearestAprilTag() {
