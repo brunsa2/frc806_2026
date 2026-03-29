@@ -51,7 +51,7 @@ public class SwerveModule extends SubsystemBase{
         driveMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         driveMotorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         driveMotorConfig.CurrentLimits.SupplyCurrentLimit = 40;
-        driveMotorConfig.Feedback.SensorToMechanismRatio = DRIVE_POSITION_CONVERSION;
+        driveMotorConfig.Feedback.SensorToMechanismRatio = 1/DRIVE_POSITION_CONVERSION;
         if (invertDirection) {
             driveMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         }
@@ -75,7 +75,7 @@ public class SwerveModule extends SubsystemBase{
         //driveController.setI(Constants.Modules.SpeedKI);
         //driveController.setD(Constants.Modules.SpeedKD);
 
-        steerController = new PIDController(Constants.Modules.SteerKP, Constants.Modules.SteerKI, Constants.Modules.SteerKD);
+        steerController = new PIDController(Constants.Drivetrain.SteerKP, Constants.Drivetrain.SteerKI, Constants.Drivetrain.SteerKD);
         steerController.enableContinuousInput(0 - Preferences.getDouble(EncoderPreferenceKey + encoderID, 0), 1 - Preferences.getDouble(EncoderPreferenceKey + encoderID, 0));
 
     }

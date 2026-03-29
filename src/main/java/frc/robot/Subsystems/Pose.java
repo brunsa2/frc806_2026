@@ -37,52 +37,32 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
-public class Camera extends SubsystemBase {
-    private class AprilTag {
-        public PoseEstimator<SwerveModulePosition[]> poseEstimator;
-        public double timestamp;
-    }
-    
+public class Pose extends SubsystemBase {
     private final PhotonCamera camera;
-    private final int maxTrackedTargets;
     private final Supplier<Rotation2d> rotationSupplier;
     private final Supplier<SwerveModulePosition[]> positionSupplier;
-    private final Map<Integer, AprilTag> aprilTags = new HashMap<>();
     private final SwerveDriveKinematics kinematics;
-    private int closestFiducialId;
-    private final PhotonPoseEstimator photonEstimator = new PhotonPoseEstimator(Constants.Camera.FieldLayout, Constants.Camera.RobotToCamera);
+    private final PhotonPoseEstimator photonEstimator = new PhotonPoseEstimator(Constants.Pose.FieldLayout, Constants.Pose.RobotToCamera);
     private final SwerveDrivePoseEstimator poseEstimator;
+    private final Field2d field = new Field2d();
 
-    private final double TIMEOUT = 3;
-
-    private final Alert noTagAlert = new Alert("No April Tags detected", AlertType.kWarning);
-    private final Alert tagCountAlert = new Alert("", AlertType.kInfo);
-
-
-
-    private final Field2d m_field = new Field2d();
-
-
-
-    public Camera(String name, int maxTrackedTargets, Supplier<SwerveDriveKinematics> kinematicsSupplier, Supplier<Rotation2d> rotationSupplier, Supplier<SwerveModulePosition[]> positionProvider) {
+    public Pose(String name, Supplier<SwerveDriveKinematics> kinematicsSupplier, Supplier<Rotation2d> rotationSupplier, Supplier<SwerveModulePosition[]> positionProvider) {
         camera = new PhotonCamera(name);
-        this.maxTrackedTargets = maxTrackedTargets;
         kinematics = kinematicsSupplier.get();
         this.rotationSupplier = rotationSupplier;
         this.positionSupplier = positionProvider;
-        this.closestFiducialId = -1;
 
         poseEstimator = new SwerveDrivePoseEstimator(
             kinematics,
             rotationSupplier.get(),
             positionSupplier.get(),
             new Pose2d(),
-            VecBuilder.fill(Constants.Drivetrain.Odometry.PositionStdDev, Constants.Drivetrain.Odometry.PositionStdDev, Constants.Drivetrain.Odometry.AngleStdDev),
-            VecBuilder.fill(Constants.Drivetrain.Vision.PositionStdDev, Constants.Drivetrain.Vision.PositionStdDev, Constants.Drivetrain.Vision.PositionStdDev)
+            VecBuilder.fill(Constants.Pose.Odometry.PositionStdDev, Constants.Pose.Odometry.PositionStdDev, Constants.Pose.Odometry.AngleStdDev),
+            // We calculate these upon update and give the real values then
+            VecBuilder.fill(999999, 999999, 999999)
         );
 
-
-        SmartDashboard.putData("Field", m_field);
+        SmartDashboard.putData("Field", field);
     }
  
     @Override
@@ -92,7 +72,7 @@ public class Camera extends SubsystemBase {
             if (visionEstimate.isEmpty()) {
                 visionEstimate = photonEstimator.estimateLowestAmbiguityPose(result);
             }
-            Matrix<N3, N1> stdDevs = visionEstimate.map(e -> getStdDevs(e, result.getTargets())).orElse(Constants.Camera.SingleTagStdDevs);
+            Matrix<N3, N1> stdDevs = visionEstimate.map(e -> getStdDevs(e, result.getTargets())).orElse(Constants.Pose.SingleTagStdDevs);
 
             visionEstimate.ifPresent(e -> {
                 poseEstimator.addVisionMeasurement(e.estimatedPose.toPose2d(), e.timestampSeconds, stdDevs);
@@ -101,11 +81,11 @@ public class Camera extends SubsystemBase {
 
         poseEstimator.update(rotationSupplier.get(), positionSupplier.get());
 
-        m_field.setRobotPose(poseEstimator.getEstimatedPosition());
+        field.setRobotPose(poseEstimator.getEstimatedPosition());
     }
 
     private Matrix<N3, N1> getStdDevs(EstimatedRobotPose estimatedPose, List<PhotonTrackedTarget> targets) {
-        var estStdDevs = Constants.Camera.SingleTagStdDevs;
+        var estStdDevs = Constants.Pose.SingleTagStdDevs;
         int numTags = 0;
         double avgDist = 0;
 
@@ -126,7 +106,7 @@ public class Camera extends SubsystemBase {
             avgDist /= numTags;
             // Decrease std devs if multiple targets are visible
             if (numTags > 1) {
-                estStdDevs = Constants.Camera.MultiTagStdDevs;
+                estStdDevs = Constants.Pose.MultiTagStdDevs;
             } 
             // Increase std devs based on (average) distance
             if (numTags == 1 && avgDist > 4) {
