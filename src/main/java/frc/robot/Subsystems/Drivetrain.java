@@ -54,7 +54,7 @@ public class Drivetrain extends SubsystemBase {
         SmartDashboard.putData(enableCalibration());
         SmartDashboard.putData(calibrate());
         SmartDashboard.putData(cancelCalibration());
-        SmartDashboard.putData(this);        
+        SmartDashboard.putData(this);
     }
 
     public void setPose(Pose pose) {
@@ -126,6 +126,7 @@ public class Drivetrain extends SubsystemBase {
 
     @Override
     public void periodic() {
+        // TODO: calibration triggers don't need to be commands
         if (controller.start().getAsBoolean()){
             resetGyro();
         }

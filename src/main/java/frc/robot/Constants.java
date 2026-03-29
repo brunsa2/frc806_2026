@@ -76,8 +76,6 @@ public class Constants {
 
         public static double ControllerDeadband = 0.15;
 
-        
-
         public static final double TranslationPow = 3;
         public static final double RotationPow = 3;
 
