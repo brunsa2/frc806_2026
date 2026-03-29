@@ -1,6 +1,15 @@
 package frc.robot;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import frc.robot.Subsystems.SwerveModule;
 
 public class Constants {
@@ -23,6 +32,29 @@ public class Constants {
 
     public static final int PigeonID = 22;   
 
+    public static double controllerDeadband = 0.15; 
+
+    public interface Pose {
+        public static final String CameraName = "front";
+        public static final Translation2d Position = new Translation2d(0, 0);
+
+        // TODO: fix these fake values
+        public static final Matrix<N3, N1> SingleTagStdDevs = VecBuilder.fill(0.1, 0.1, 999999);
+        public static final Matrix<N3, N1> MultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1);
+
+        public interface Odometry {
+            public static final double PositionStdDev = 0.1;
+            public static final double AngleStdDev = 0.1;
+        }
+
+        public static final Transform3d RobotToCamera = new Transform3d(
+            new Translation3d(0, 0, 0),
+            new Rotation3d(0, 0, 0)
+        );
+        public static final AprilTagFieldLayout FieldLayout =
+                AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+    }
+
     public interface Drivetrain {
         public static final double SpeedKP = 0.001, SpeedKI = 0, SpeedKD = 0.0005;
         public static final double SteerKP = 1.5, SteerKI = 0, SteerKD = 0;
@@ -44,6 +76,8 @@ public class Constants {
 
         public static double ControllerDeadband = 0.15;
 
+        
+
         public static final double TranslationPow = 3;
         public static final double RotationPow = 3;
 
@@ -51,6 +85,7 @@ public class Constants {
         public static final double SlowFactorOffset = 1;
 
         public static final double SteerMotorSlewRate = 20;
+        
     }
 
     public interface Indexer {
