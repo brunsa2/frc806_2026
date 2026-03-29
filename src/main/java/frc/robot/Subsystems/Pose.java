@@ -82,6 +82,10 @@ public class Pose extends SubsystemBase {
         poseEstimator.update(rotationSupplier.get(), positionSupplier.get());
 
         field.setRobotPose(poseEstimator.getEstimatedPosition());
+
+        SmartDashboard.putNumber("X", poseEstimator.getEstimatedPosition().getX());
+        SmartDashboard.putNumber("Y", poseEstimator.getEstimatedPosition().getY());
+        SmartDashboard.putNumber("T", poseEstimator.getEstimatedPosition().getRotation().getDegrees());
     }
 
     private Matrix<N3, N1> getStdDevs(EstimatedRobotPose estimatedPose, List<PhotonTrackedTarget> targets) {

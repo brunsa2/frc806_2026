@@ -46,6 +46,6 @@ public class RobotContainer {
         // driveRightTrigger.whileTrue(parallel(indexer.index(), shooter.shoot()));
         // drivekRightBumper.toggleOnTrue(intake.top());
         // drivekLeftBumper.whileTrue(intake.bump());
-        driveRightTrigger.whileTrue(drivetrain.alignToTag(7, new Translation2d(-1, -0.5), Rotation2d.fromDegrees(-135)));
+        driveRightTrigger.whileTrue(drivetrain.alignToTag(7, new Translation2d(-1, -0.25), Rotation2d.fromDegrees(-135)));
     }
 }

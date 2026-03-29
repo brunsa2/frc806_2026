@@ -44,12 +44,12 @@ public class Constants {
         public static final Translation2d Position = new Translation2d(0, 0);
 
         // TODO: fix these fake values
-        public static final Matrix<N3, N1> SingleTagStdDevs = VecBuilder.fill(0.1, 0.1, 999999);
+        public static final Matrix<N3, N1> SingleTagStdDevs = VecBuilder.fill(0.02, 0.02, 999999);
         public static final Matrix<N3, N1> MultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1);
 
         public interface Odometry {
-            public static final double PositionStdDev = 0.1;
-            public static final double AngleStdDev = 0.1;
+            public static final double PositionStdDev = 0.05;
+            public static final double AngleStdDev = -0.01;
         }
 
         public static final Transform3d RobotToCamera = new Transform3d(
@@ -107,21 +107,21 @@ public class Constants {
     public interface Indexer {
         public static final int BottomRollerID = 14;
         public static final int TopRollerID = 16;
-        public static final double floorIdleVoltage = 1.2;
+        public static final double floorIdleVoltage = 0;
         public static final double floorIndexVoltage = 4.8;
-        public static final double ceilingIdleVoltage = 2.4;
+        public static final double ceilingIdleVoltage = 0;
         public static final double ceilingIndexVoltage = 8.4;
     }
 
     public interface Shooter {
         public static final int MotorID = 17;
-        public static final double PrimeRPM = 3000;
-        public static final double ShootRPM = 3500;
-        public static final double kP = 0.5;
+        public static final double PrimeRPM = 0;
+        public static final double ShootRPM = 0;
+        public static final double kP = 0;
         public static final double kI = 0;
         public static final double kD = 0;
-        public static final double kS = 0.147368;
-        public static final double kV = 0.105263;
+        public static final double kS = 0;
+        public static final double kV = 0;
     }
 
     public interface Intake {

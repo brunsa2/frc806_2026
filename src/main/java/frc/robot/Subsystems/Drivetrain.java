@@ -4,6 +4,7 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.hardware.Pigeon2;
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -25,6 +26,8 @@ import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+
 import static edu.wpi.first.wpilibj2.command.Commands.none;
 import static edu.wpi.first.wpilibj2.command.Commands.parallel;
 import static edu.wpi.first.wpilibj2.command.Commands.run;
@@ -52,14 +55,19 @@ public class Drivetrain extends SubsystemBase {
     // on a diagonal can go faster. We need a 2D aware motion profiler (this might be provided
     // by custom path planning later on...)
     private final TrapezoidProfile lateralProfile =
-        new TrapezoidProfile(new TrapezoidProfile.Constraints(0.1, 0.1));
+        new TrapezoidProfile(new TrapezoidProfile.Constraints(0.05, 0.1));
     private final TrapezoidProfile angularProfile =
-        new TrapezoidProfile(new TrapezoidProfile.Constraints(0.1, 0.1));
+        new TrapezoidProfile(new TrapezoidProfile.Constraints(0.05, 0.1));
     private TrapezoidProfile.State forwardProfileState;
     private TrapezoidProfile.State sidewaysProfileState;
     private TrapezoidProfile.State angularProfileState;
-    private final PIDController visionForwardBackController = new PIDController(2.5, 0, 0);
-    private final PIDController visionSidewaysController = new PIDController(2.5, 0, 0);
+    // private final PIDController visionForwardBackController = new PIDController(2.5, 0, 0);
+    private final ProfiledPIDController visionForwardBackController = new ProfiledPIDController(
+        4, 0, 0,
+        new TrapezoidProfile.Constraints(3, 5));
+    private final ProfiledPIDController visionSidewaysController = new ProfiledPIDController(
+        4, 0, 0,
+        new TrapezoidProfile.Constraints(3, 5));
     private final PIDController visionRotationsController = new PIDController(0, 0, 0);
 
     private final Alert willCalibrateAlert = new Alert("Robot will enter drivetrain calibration when re-enabled", AlertType.kInfo);
@@ -149,34 +157,39 @@ public class Drivetrain extends SubsystemBase {
             var tagToTarget = new Transform2d(offset.unaryMinus(), theta);
             var targetPose = tagPose2d.transformBy(tagToTarget);
 
-            var initialPose = pose.getPose();
-            forwardProfileState = new TrapezoidProfile.State(initialPose.getX(), 0.0);
-            sidewaysProfileState = new TrapezoidProfile.State(initialPose.getY(), 0.0);
-            angularProfileState = new TrapezoidProfile.State(initialPose.getRotation().getRotations(), 0.0);
+            return runOnce(() -> {
+                var initialPose = pose.getPose();
+                forwardProfileState = new TrapezoidProfile.State(initialPose.getX(), 0.0);
+                sidewaysProfileState = new TrapezoidProfile.State(initialPose.getY(), 0.0);
+                angularProfileState = new TrapezoidProfile.State(initialPose.getRotation().getRotations(), 0.0);
 
-            timestamp = getFPGATimestamp();
+                timestamp = getFPGATimestamp();
 
-            return run(()-> {
+                SmartDashboard.putNumber("FP0", initialPose.getX());
+                visionForwardBackController.reset(initialPose.getX());
+                visionSidewaysController.reset(initialPose.getY());
+            }).andThen(run(()-> {
                 var robotPose = pose.getPose();
 
                 double newTimestamp = getFPGATimestamp();
                 double elapsedTime = newTimestamp - timestamp;
+                SmartDashboard.putNumber("ET", elapsedTime);
                 timestamp = newTimestamp;
 
                 forwardProfileState = lateralProfile.calculate(elapsedTime, forwardProfileState, new TrapezoidProfile.State(targetPose.getX(), 0));
-                sidewaysProfileState = lateralProfile.calculate(elapsedTime, sidewaysProfileState, new TrapezoidProfile.State(targetPose.getY(), 0));
-                // Note: this might not work for angular since it doesn't support continuous motion
-                angularProfileState = angularProfile.calculate(elapsedTime, angularProfileState, new TrapezoidProfile.State(robotPose.getRotation().getRotations(), 0));
-
-                var forwardVelocity = -visionForwardBackController.calculate(robotPose.getX(), forwardProfileState.position);
-                var sidewaysVelocity = -visionSidewaysController.calculate(robotPose.getY(), sidewaysProfileState.position);
+                // sidewaysProfileState = lateralProfile.calculate(elapsedTime, sidewaysProfileState, new TrapezoidProfile.State(targetPose.getY(), 0));
+                // // Note: this might not work for angular since it doesn't support continuous motion
+                // angularProfileState = angularProfile.calculate(elapsedTime, angularProfileState, new TrapezoidProfile.State(robotPose.getRotation().getRotations(), 0));
+                
+                var forwardVelocity = -visionForwardBackController.calculate(robotPose.getX(), targetPose.getX());
+                var sidewaysVelocity = -visionSidewaysController.calculate(robotPose.getY(), targetPose.getY());
                 var angularVelcoity = -visionRotationsController.calculate(robotPose.getRotation().getRotations(), targetPose.getRotation().getRotations());
 
                 var speeds = new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelcoity);
 
                 setSpeeds(speeds);
-            });
-        }).orElse(Commands.none());
+            }));
+        }).orElse(new SequentialCommandGroup());
     }
 
     public Command manualDriveFieldRelativeWithSteerAimToNearestAprilTag() {

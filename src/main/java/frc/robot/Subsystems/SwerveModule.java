@@ -42,7 +42,7 @@ public class SwerveModule extends SubsystemBase{
     final double STEER_VELOCITY_CONVERSION = STEER_POSITION_CONVERSION / 60.0;
     private final SlewRateLimiter steerLimiter = new SlewRateLimiter(Constants.Drivetrain.SteerMotorSlewRate);
 
-    private final SlewRateLimiter driveLimiter = new SlewRateLimiter(0.2);
+    private final SlewRateLimiter driveLimiter = new SlewRateLimiter(3);
 
     public SwerveModule(int driveMotorID, int steerMotorID, int encoderID, boolean invertDirection){
         this.driveMotorID = driveMotorID;
@@ -92,7 +92,7 @@ public class SwerveModule extends SubsystemBase{
         double steerMotorCommand = steerController.calculate(currentAngle, targetState.angle.getRotations());
         steerMotor.set(steerLimiter.calculate(steerMotorCommand));
         targetState.speedMetersPerSecond *= targetState.angle.minus(new Rotation2d(currentAngle*2*Math.PI)).getCos();
-        var clampedSpeed = MathUtil.clamp(targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS, -0.2, 0.2);
+        var clampedSpeed = MathUtil.clamp(targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS, -0.6, 0.6);
         var slewRateLimitedSpeed = driveLimiter.calculate(clampedSpeed);
         driveMotor.set(slewRateLimitedSpeed); 
     }
