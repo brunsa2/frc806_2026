@@ -75,7 +75,7 @@ public class SwerveModule extends SubsystemBase{
         //driveController.setI(Constants.Modules.SpeedKI);
         //driveController.setD(Constants.Modules.SpeedKD);
 
-        steerController = new PIDController(Constants.Drivetrain.SteerKP, Constants.Drivetrain.SteerKI, Constants.Drivetrain.SteerKD);
+        steerController = new PIDController(Constants.Drivetrain.SteerDriveKP, Constants.Drivetrain.SteerDriveKI, Constants.Drivetrain.SteerDriveKD);
         steerController.enableContinuousInput(0 - Preferences.getDouble(EncoderPreferenceKey + encoderID, 0), 1 - Preferences.getDouble(EncoderPreferenceKey + encoderID, 0));
 
     }

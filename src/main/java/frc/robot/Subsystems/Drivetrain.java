@@ -3,6 +3,7 @@ package frc.robot.Subsystems;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.hardware.Pigeon2;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -14,6 +15,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -22,6 +24,10 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants;
 import frc.robot.Commands.DriveFieldRelative;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 public class Drivetrain extends SubsystemBase {
     boolean isWaitingToCalibrate;
@@ -53,13 +59,41 @@ public class Drivetrain extends SubsystemBase {
         SmartDashboard.putData(calibrate());
         SmartDashboard.putData(cancelCalibration());
         SmartDashboard.putData(this);
+
+        RobotConfig config = null;
+        try {
+            config = RobotConfig.fromGUISettings();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        AutoBuilder.configure(
+            this::getPose,
+            this::resetPose,
+            this::getChasisSpeed,
+            (speeds, feedforwards) -> driveFieldRelative(speeds),
+
+            new PPHolonomicDriveController(
+                new PIDConstants(Constants.Drivetrain.SpeedKP, Constants.Drivetrain.SpeedKI, Constants.Drivetrain.SpeedKD),
+                new PIDConstants(Constants.Drivetrain.SteerKP, Constants.Drivetrain.SteerKI, Constants.Drivetrain.SteerKD)
+            ),
+            config,
+            () -> {
+              var alliance = DriverStation.getAlliance();
+              if (!alliance.isPresent()) {
+                return false;
+              }
+              return alliance.get() == DriverStation.Alliance.Red;
+            },
+            this
+        );
     }
 
-    public void setPose(Pose pose) {
+	public void setPose(Pose pose) {
         this.pose = pose;
     }
 
-    public SwerveDriveKinematics getKinematics() {
+	public SwerveDriveKinematics getKinematics() {
         return kinematics;
     }
 
@@ -69,6 +103,14 @@ public class Drivetrain extends SubsystemBase {
 
     public void resetGyro() {
         IMU.reset();
+    }
+
+    private Pose2d getPose() {
+        return pose.getPose();
+    }
+
+    private void resetPose(Pose2d pose) {
+        // Vision system reliably gives starting pose, so we ignore this one
     }
 
     public Command getInitialCommand() {
