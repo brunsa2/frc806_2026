@@ -39,7 +39,7 @@ public class SwerveModule extends SubsystemBase{
     final double DRIVE_VELOCITY_CONVERSION = DRIVE_POSITION_CONVERSION / 60.0;
     final double STEER_POSITION_CONVERSION = 1;
     final double STEER_VELOCITY_CONVERSION = STEER_POSITION_CONVERSION / 60.0;
-    private final SlewRateLimiter steerLimiter = new SlewRateLimiter(Constants.Modules.SteerMotorSlewRate);
+    private final SlewRateLimiter steerLimiter = new SlewRateLimiter(Constants.Drivetrain.SteerMotorSlewRate);
 
     public SwerveModule(int driveMotorID, int steerMotorID, int encoderID, boolean invertDirection){
         this.driveMotorID = driveMotorID;
@@ -75,7 +75,7 @@ public class SwerveModule extends SubsystemBase{
         //driveController.setI(Constants.Modules.SpeedKI);
         //driveController.setD(Constants.Modules.SpeedKD);
 
-        steerController = new PIDController(Constants.Drivetrain.SteerKP, Constants.Drivetrain.SteerKI, Constants.Drivetrain.SteerKD);
+        steerController = new PIDController(Constants.Drivetrain.SteerDriveKP, Constants.Drivetrain.SteerDriveKI, Constants.Drivetrain.SteerDriveKD);
         steerController.enableContinuousInput(0 - Preferences.getDouble(EncoderPreferenceKey + encoderID, 0), 1 - Preferences.getDouble(EncoderPreferenceKey + encoderID, 0));
 
     }

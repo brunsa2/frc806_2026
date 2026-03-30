@@ -56,8 +56,9 @@ public class Constants {
     }
 
     public interface Drivetrain {
-        public static final double SpeedKP = 0.001, SpeedKI = 0, SpeedKD = 0.0005;
+        public static final double SpeedKP = 5, SpeedKI = 0, SpeedKD = 0;
         public static final double SteerKP = 1.5, SteerKI = 0, SteerKD = 0;
+        public static final double SteerDriveKP = 1.5, SteerDriveKI = 0, SteerDriveKD = 0;
         
         public static final int FrontLeftDriveID   = 4, FrontLeftSteerID   = 5, FrontLeftEncoderID = 6;
 
@@ -74,10 +75,6 @@ public class Constants {
             new SwerveModule(RearRightDriveID, RearRightSteerID, RearRightEncoderID, true)
         };
 
-        
-
-        
-
         public static final double TranslationPow = 3;
         public static final double RotationPow = 3;
 
@@ -85,10 +82,6 @@ public class Constants {
         public static final double SlowFactorOffset = 1;
 
         public static final double SteerMotorSlewRate = 20;
-        public static final double ControllerKP = 0.02, ControllerKI = 0, ControllerKD = 0;
-
-        public static final double DistanceSensorThreshold = 0;
-        
     }
 
     public interface Indexer {

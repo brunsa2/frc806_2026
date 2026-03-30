@@ -70,12 +70,12 @@ public class Drivetrain extends SubsystemBase {
         AutoBuilder.configure(
             this::getPose,
             this::resetPose,
-            this::getRobotRelativeSpeeds,
-            (speeds, feedforwards) -> driveFieldRelative(speeds, true),
+            this::getChasisSpeed,
+            (speeds, feedforwards) -> driveFieldRelative(speeds),
 
             new PPHolonomicDriveController(
-                new PIDConstants(Constants.Modules.SpeedKP, Constants.Modules.SpeedKI, Constants.Modules.SpeedKD),
-                new PIDConstants(Constants.Modules.SteerKP, Constants.Modules.SteerKI, Constants.Modules.SteerKD)
+                new PIDConstants(Constants.Drivetrain.SpeedKP, Constants.Drivetrain.SpeedKI, Constants.Drivetrain.SpeedKD),
+                new PIDConstants(Constants.Drivetrain.SteerKP, Constants.Drivetrain.SteerKI, Constants.Drivetrain.SteerKD)
             ),
             config,
             () -> {
@@ -106,19 +106,12 @@ public class Drivetrain extends SubsystemBase {
     }
 
     private Pose2d getPose() {
-        // TODO: implement
-        return new Pose2d();
+        return pose.getPose();
     }
 
     private void resetPose(Pose2d pose) {
-        // TODO: implement
+        // Vision system reliably gives starting pose, so we ignore this one
     }
-
-    private ChassisSpeeds getRobotRelativeSpeeds() {
-        // TODO: implement
-        return new ChassisSpeeds();
-    }
-
 
     public Command getInitialCommand() {
         if (Preferences.getBoolean("Drivetrain.enableDrivetrainCalibration", true)) {

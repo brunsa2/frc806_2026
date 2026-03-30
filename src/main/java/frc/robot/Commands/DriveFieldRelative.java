@@ -9,8 +9,8 @@ import frc.robot.Subsystems.Drivetrain;
 public class DriveFieldRelative extends Command {
     private final Drivetrain swerve;
     private final CommandXboxController controller;
-    double translationPow = Constants.Modules.TranslationPow;
-    double rotationPow = Constants.Modules.RotationPow;
+    double translationPow = Constants.Drivetrain.TranslationPow;
+    double rotationPow = Constants.Drivetrain.RotationPow;
     /**
      * Creates a new DriveFieldRelative.
      *
@@ -49,7 +49,7 @@ public class DriveFieldRelative extends Command {
         y = (y > 0) ? Math.abs(Math.pow(y, translationPow)) : -Math.abs(Math.pow(y, translationPow));
         theta = (theta > 0) ? Math.abs(Math.pow(theta, rotationPow)) : -Math.abs(Math.pow(theta, rotationPow));
 
-    double slowModeFactor = (controller.getLeftTriggerAxis() * Constants.Modules.SlowFactor) + Constants.Modules.SlowFactorOffset;
+    double slowModeFactor = (controller.getLeftTriggerAxis() * Constants.Drivetrain.SlowFactor) + Constants.Drivetrain.SlowFactorOffset;
 
         swerve.driveFieldRelative(
         new ChassisSpeeds(
