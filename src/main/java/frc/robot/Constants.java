@@ -34,17 +34,16 @@ public class Constants {
 
     public static double controllerDeadband = 0.15; 
 
-    public interface Pose {
+    public interface Drivetrain {
         public static final String CameraName = "front";
         public static final Translation2d Position = new Translation2d(0, 0);
 
-        // TODO: fix these fake values
         public static final Matrix<N3, N1> SingleTagStdDevs = VecBuilder.fill(0.1, 0.1, 999999);
-        public static final Matrix<N3, N1> MultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1);
+        public static final Matrix<N3, N1> MultiTagStdDevs = VecBuilder.fill(0.05, 0.05, 999999);
 
         public interface Odometry {
             public static final double PositionStdDev = 0.1;
-            public static final double AngleStdDev = 0.1;
+            public static final double AngleStdDev = 0.05;
         }
 
         public static final Transform3d RobotToCamera = new Transform3d(
@@ -53,9 +52,7 @@ public class Constants {
         );
         public static final AprilTagFieldLayout FieldLayout =
                 AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
-    }
 
-    public interface Drivetrain {
         public static final double SpeedKP = 5, SpeedKI = 0, SpeedKD = 0;
         public static final double SteerKP = 1.5, SteerKI = 0, SteerKD = 0;
         public static final double SteerDriveKP = 1.5, SteerDriveKI = 0, SteerDriveKD = 0;
