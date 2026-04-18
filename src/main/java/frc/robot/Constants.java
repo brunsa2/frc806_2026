@@ -69,10 +69,10 @@ public class Constants {
         public static final int RearRightDriveID   = 10, RearRightSteerID   = 11, RearRightEncoderID = 12;
 
         SwerveModule[] moduleArray = new SwerveModule[] {
-            new SwerveModule(FrontRightDriveID,FrontRightSteerID,FrontRightEncoderID, true),
-            new SwerveModule(FrontLeftDriveID, FrontLeftSteerID, FrontLeftEncoderID, false),
-            new SwerveModule(RearLeftDriveID, RearLeftSteerID, RearLeftEncoderID, false),
-            new SwerveModule(RearRightDriveID, RearRightSteerID, RearRightEncoderID, true)
+            new SwerveModule(FrontRightDriveID,FrontRightSteerID,FrontRightEncoderID),
+            new SwerveModule(FrontLeftDriveID, FrontLeftSteerID, FrontLeftEncoderID),
+            new SwerveModule(RearLeftDriveID, RearLeftSteerID, RearLeftEncoderID),
+            new SwerveModule(RearRightDriveID, RearRightSteerID, RearRightEncoderID)
         };
 
         public static final double TranslationPow = 3;

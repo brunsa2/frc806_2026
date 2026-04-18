@@ -3,6 +3,7 @@ package frc.robot.Subsystems;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -41,7 +42,7 @@ public class SwerveModule extends SubsystemBase{
     final double STEER_VELOCITY_CONVERSION = STEER_POSITION_CONVERSION / 60.0;
     private final SlewRateLimiter steerLimiter = new SlewRateLimiter(Constants.Drivetrain.SteerMotorSlewRate);
 
-    public SwerveModule(int driveMotorID, int steerMotorID, int encoderID, boolean invertDirection){
+    public SwerveModule(int driveMotorID, int steerMotorID, int encoderID){
         this.driveMotorID = driveMotorID;
         this.encoderID = encoderID;
 
@@ -52,9 +53,6 @@ public class SwerveModule extends SubsystemBase{
         driveMotorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         driveMotorConfig.CurrentLimits.SupplyCurrentLimit = 40;
         driveMotorConfig.Feedback.SensorToMechanismRatio = 1/DRIVE_POSITION_CONVERSION;
-        if (invertDirection) {
-            driveMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-        }
         driveMotor.getConfigurator().apply(driveMotorConfig);
         driveMotor.setPosition(0);
 
@@ -68,6 +66,10 @@ public class SwerveModule extends SubsystemBase{
         
         // module encoder
         moduleEncoder = new CANcoder(encoderID, new CANBus("*"));
+        var steerEncoderConfig = new CANcoderConfiguration();
+        steerEncoderConfig.MagnetSensor.MagnetOffset = -Preferences.getDouble(EncoderPreferenceKey + encoderID, 0);
+        steerEncoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 0.5;
+        moduleEncoder.getConfigurator().apply(steerEncoderConfig);
 
         //controllers
         //driveController = driveMotor.getPIDController();
@@ -76,7 +78,7 @@ public class SwerveModule extends SubsystemBase{
         //driveController.setD(Constants.Modules.SpeedKD);
 
         steerController = new PIDController(Constants.Drivetrain.SteerDriveKP, Constants.Drivetrain.SteerDriveKI, Constants.Drivetrain.SteerDriveKD);
-        steerController.enableContinuousInput(0 - Preferences.getDouble(EncoderPreferenceKey + encoderID, 0), 1 - Preferences.getDouble(EncoderPreferenceKey + encoderID, 0));
+        steerController.enableContinuousInput(-0.5, 0.5);
 
     }
 
@@ -86,6 +88,7 @@ public class SwerveModule extends SubsystemBase{
         //driveController.setReference(targetState.speedMetersPerSecond / DRIVE_VELOCITY_CONVERSION, ControlType.kVelocity);
 
         double currentAngle = getModuleAngRotations();
+        // TODO: steer PID on motor controller with external cancoder sensor
         double steerMotorCommand = steerController.calculate(currentAngle, targetState.angle.getRotations());
         steerMotor.set(steerLimiter.calculate(steerMotorCommand));
         // Cosine compensation: drive wheel slower when it's not rotated to the correct position yet
@@ -96,6 +99,9 @@ public class SwerveModule extends SubsystemBase{
     public Command calibrate() {
         return runOnce(() -> {
             var encoderValue = moduleEncoder.getAbsolutePosition().getValueAsDouble();
+            var steerEncoderConfig = new CANcoderConfiguration();
+            steerEncoderConfig.MagnetSensor.MagnetOffset = -encoderValue;
+            moduleEncoder.getConfigurator().apply(steerEncoderConfig);
             Preferences.setDouble(EncoderPreferenceKey + encoderID, encoderValue);
         }).withName("Calibrate");
     }
@@ -105,7 +111,7 @@ public class SwerveModule extends SubsystemBase{
     }
 
     public double getModuleAngRotations() {
-        return moduleEncoder.getAbsolutePosition().getValueAsDouble() - Preferences.getDouble(EncoderPreferenceKey + encoderID, 0);
+        return moduleEncoder.getAbsolutePosition().getValueAsDouble();
     }
 
     public SwerveModulePosition getModulePosition() {
