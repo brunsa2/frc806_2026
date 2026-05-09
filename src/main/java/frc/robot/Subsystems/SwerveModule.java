@@ -47,10 +47,6 @@ public class SwerveModule extends SubsystemBase{
     final Alert SwerveDriveMotorAlert;
     final Alert SwerveSteerMotorAlert;
     final Alert SwerveEncoderAlert;
-    final Alert SwerveGoodOverall;
-    final Alert SwerveBadOverall;
-    final String SwerveSpeedMPSName;
-    final String SwerveSpeedDutyCycleName;
     final String SwerveRotationName;
 
     public SwerveModule(int driveMotorID, int steerMotorID, int encoderID){
@@ -60,10 +56,6 @@ public class SwerveModule extends SubsystemBase{
         SwerveDriveMotorAlert = new Alert("Lost module " + encoderID + " drive motor(" + driveMotorID + ")", AlertType.kError);
         SwerveSteerMotorAlert = new Alert("Lost module " + encoderID + " steer motor(" + steerMotorID + ")", AlertType.kError);
         SwerveEncoderAlert = new Alert("Lost module " + encoderID + " encoder(" + encoderID + ")", AlertType.kError);
-        SwerveGoodOverall = new Alert("Swerve " + encoderID + " good to drive", AlertType.kInfo);
-        SwerveBadOverall = new Alert("Swerve " + encoderID + " not good to drive", AlertType.kError);
-        SwerveSpeedMPSName = "Swerve " + encoderID + " speed MPS";
-        SwerveSpeedDutyCycleName = "Swerve " + encoderID + " speed duty cycle";
         SwerveRotationName = "Swerve " + encoderID + " rotation";
 
         //drive motor 
@@ -115,8 +107,6 @@ public class SwerveModule extends SubsystemBase{
         steerMotor.set(steerLimiter.calculate(steerMotorCommand));
         // Cosine compensation: drive wheel slower when it's not rotated to the correct position yet
         targetState.speedMetersPerSecond *= targetState.angle.minus(new Rotation2d(currentAngle*2*Math.PI)).getCos();
-        SmartDashboard.putNumber(SwerveSpeedMPSName, targetState.speedMetersPerSecond);
-        SmartDashboard.putNumber(SwerveSpeedDutyCycleName, targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS);
         driveMotor.set(targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS); 
     }
 
@@ -142,7 +132,7 @@ public class SwerveModule extends SubsystemBase{
     @Override
     public void periodic() {
         setAlerts();
-        SmartDashboard.putNumber(SwerveRotationName, moduleEncoder.getAbsolutePosition().getValueAsDouble());
+        SmartDashboard.putNumber(SwerveRotationName, getModuleAngRotations());
     }
 
     public void setAlerts() {
@@ -150,8 +140,6 @@ public class SwerveModule extends SubsystemBase{
         SwerveDriveMotorAlert.set(!deviceStatus[0]);
         SwerveSteerMotorAlert.set(!deviceStatus[1]);
         SwerveEncoderAlert.set(!deviceStatus[2]);
-        SwerveGoodOverall.set(getSwerveOperational());
-        SwerveBadOverall.set(!getSwerveOperational());
     }
 
     public boolean getSwerveOperational() {
