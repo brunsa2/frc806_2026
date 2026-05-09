@@ -84,8 +84,8 @@ public class Constants {
         public static final double SteerMotorSlewRate = 20;
         
         public static final double DriveMotorsLowSupplyCurrentLimit = 40;
-        public static final double DriveMotorsHighSupplyCurrentLimit = 80;
-        public static final double DriveMotorsHighSupplyCurrentSeconds = 2;
+        public static final double DriveMotorsHighSupplyCurrentLimit = 60;
+        public static final double DriveMotorsHighSupplyCurrentSeconds = 1;
 
         public static final double SteerMotorsSupplyCurrentLimit = 20;
     }

@@ -15,6 +15,8 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Preferences;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -33,9 +35,6 @@ public class SwerveModule extends SubsystemBase{
     CANcoder moduleEncoder;
     private static final String EncoderPreferenceKey = "EncoderOffset";
     //conversion factors
-    final String SwerveStatusName = "Swerve " + encoderID + " status";
-    final String SwerveSpeedMPSName = "Swerve " + encoderID + " speed MPS";
-    final String SwerveSpeedDutyCycleName = "Swerve " + encoderID + " speed duty cycle";
     final double WHEEL_DIAMETER = Units.inchesToMeters(4);
     final double WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER * Math.PI;
     final double GEAR_RATIO = 1.0 / 5.27;
@@ -45,9 +44,19 @@ public class SwerveModule extends SubsystemBase{
     final double STEER_VELOCITY_CONVERSION = STEER_POSITION_CONVERSION / 60.0;
     private final SlewRateLimiter steerLimiter = new SlewRateLimiter(Constants.Drivetrain.SteerMotorSlewRate);
 
+    final Alert SwerveDriveMotorAlert;
+    final Alert SwerveSteerMotorAlert;
+    final Alert SwerveEncoderAlert;
+    final String SwerveRotationName;
+
     public SwerveModule(int driveMotorID, int steerMotorID, int encoderID){
         this.driveMotorID = driveMotorID;
         this.encoderID = encoderID;
+
+        SwerveDriveMotorAlert = new Alert("Lost module " + encoderID + " drive motor(" + driveMotorID + ")", AlertType.kError);
+        SwerveSteerMotorAlert = new Alert("Lost module " + encoderID + " steer motor(" + steerMotorID + ")", AlertType.kError);
+        SwerveEncoderAlert = new Alert("Lost module " + encoderID + " encoder(" + encoderID + ")", AlertType.kError);
+        SwerveRotationName = "Swerve " + encoderID + " rotation";
 
         //drive motor 
         driveMotor = new TalonFX(driveMotorID);
@@ -98,40 +107,46 @@ public class SwerveModule extends SubsystemBase{
         steerMotor.set(steerLimiter.calculate(steerMotorCommand));
         // Cosine compensation: drive wheel slower when it's not rotated to the correct position yet
         targetState.speedMetersPerSecond *= targetState.angle.minus(new Rotation2d(currentAngle*2*Math.PI)).getCos();
-        SmartDashboard.putNumber(SwerveSpeedMPSName, targetState.speedMetersPerSecond);
-        SmartDashboard.putNumber(SwerveSpeedDutyCycleName, targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS);
         driveMotor.set(targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS); 
     }
 
     public Command calibrate() {
         return runOnce(() -> {
-            var encoderValue = moduleEncoder.getAbsolutePosition().getValueAsDouble();
+            var adjustedEncoderValue = moduleEncoder.getAbsolutePosition().getValueAsDouble();
             var steerEncoderConfig = new CANcoderConfiguration();
-            steerEncoderConfig.MagnetSensor.MagnetOffset = -encoderValue;
+            moduleEncoder.getConfigurator().refresh(steerEncoderConfig);
+            double offset = steerEncoderConfig.MagnetSensor.MagnetOffset;
+            var rawEncoderValue = adjustedEncoderValue - offset;
+            steerEncoderConfig.MagnetSensor.MagnetOffset = -rawEncoderValue;
             moduleEncoder.getConfigurator().apply(steerEncoderConfig);
-            Preferences.setDouble(EncoderPreferenceKey + encoderID, encoderValue);
-            System.out.println("Calibrated succesfully");
+            Preferences.setDouble(EncoderPreferenceKey + encoderID, rawEncoderValue);
+            if (Math.abs(moduleEncoder.getAbsolutePosition().waitForUpdate(0.1).getValueAsDouble()) < 0.01) {
+                System.out.println("Succesfully calibrated swerve " + encoderID);
+            }
+            else {
+                System.out.println("Swerve " + encoderID + " calibration failed");
+            }
         }).ignoringDisable(true).withName("Calibrate");
     }
 
     @Override
     public void periodic() {
-        if (swerveOperational()) {
-            SmartDashboard.putString(SwerveStatusName, "No problems with swerve");
-        }
-        else {
-            SmartDashboard.putString(SwerveStatusName, "Problem with swerve");
-        }
+        setAlerts();
+        SmartDashboard.putNumber(SwerveRotationName, getModuleAngRotations());
     }
 
-    public boolean swerveOperational() {
-        if (driveMotor.isConnected() && steerMotor.isConnected() && moduleEncoder.isConnected()) {
-            return true;
-        }
-        return false;
+    public void setAlerts() {
+        var deviceStatus = getDeviceStatus();
+        SwerveDriveMotorAlert.set(!deviceStatus[0]);
+        SwerveSteerMotorAlert.set(!deviceStatus[1]);
+        SwerveEncoderAlert.set(!deviceStatus[2]);
     }
 
-    public boolean[] deviceStatus() {
+    public boolean getSwerveOperational() {
+        return driveMotor.isConnected() && steerMotor.isConnected() && moduleEncoder.isConnected();
+    }
+
+    public boolean[] getDeviceStatus() {
         return new boolean[]{driveMotor.isConnected(), steerMotor.isConnected(), moduleEncoder.isConnected()};
     }
     

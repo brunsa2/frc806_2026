@@ -110,7 +110,7 @@ public class Drivetrain extends SubsystemBase {
     
     public Command calibrate() {
         return parallel(
-            runOnce(() -> isWaitingToCalibrate = false),
+            runOnce(() -> {isWaitingToCalibrate = false; System.out.println("Swerve calibration triggered");}),
             modules[0].calibrate(),
             modules[1].calibrate(),
             modules[2].calibrate(),
