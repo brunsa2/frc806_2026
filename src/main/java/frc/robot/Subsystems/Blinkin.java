@@ -18,14 +18,14 @@ public class Blinkin extends SubsystemBase {
     }
 
     public Command setDefaultColor() {
-        return runOnce(() -> blinkin.set(defaultColor.value)).ignoringDisable(true);
+        return run(() -> blinkin.set(defaultColor.value));
     }
 
     public Command setColor(Constants.Blinkin.SolidColors color) {
-        return runOnce(() -> blinkin.set(color.value)).ignoringDisable(true);
+        return run(() -> blinkin.set(color.value));
     }
 
     public Command turnOffLEDs() {
-        return runOnce(() -> blinkin.set(Constants.Blinkin.SolidColors.BLACK.value)).ignoringDisable(true);
+        return run(() -> blinkin.set(Constants.Blinkin.SolidColors.BLACK.value));
     }
 }
