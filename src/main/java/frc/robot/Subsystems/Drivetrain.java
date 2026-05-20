@@ -66,7 +66,7 @@ public class Drivetrain extends SubsystemBase {
             this::getPose,
             this::resetPose,
             this::getChasisSpeed,
-            (speeds, feedforwards) -> driveFieldRelative(speeds),
+            (speeds, feedforwards) -> setModuleTargetStates(speeds),
 
             new PPHolonomicDriveController(
                 new PIDConstants(Constants.Drivetrain.SpeedKP, Constants.Drivetrain.SpeedKI, Constants.Drivetrain.SpeedKD),

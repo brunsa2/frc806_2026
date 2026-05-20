@@ -91,17 +91,13 @@ public class Constants {
     }
 
     public interface Indexer {
-        public static final int BottomRollerID = 14;
         public static final int TopRollerID = 16;
-        public static final double floorIdleVoltage = 1.2;
-        public static final double floorIndexVoltage = 4.8;
         public static final double ceilingIdleVoltage = 2.4;
         public static final double ceilingIndexVoltage = 8.4;
     }
 
     public interface Shooter {
         public static final int MotorID = 17;
-        public static final double PrimeRPM = 3000;
         public static final double ShootRPM = 3500;
         public static final double kP = 0.5;
         public static final double kI = 0;
@@ -110,25 +106,29 @@ public class Constants {
         public static final double kV = 0.105263;
     }
 
-    public interface Intake {
-        public static final int ArmID = 15;
-        public static final int RollerID = 13;
+    public interface Arm {
+        public static final int ArmLeaderID = 15;
+        public static final int ArmFollowerID = 14;
         public static final int ArmEncoderId = 18;
-        public static final double rollerVoltage = 12;
         public static final double kG = 0;
         public static final double kS = 0;
         public static final double kV = 0;
         public static final double kA = 0;
         public static final double kP = 40;
-        public static final double kI = 10;
+        public static final double kI = 5;
         public static final double kD = 0;
         public static final double MotionMagicCruiseVelocity = 75;
         public static final double MotionMagicAcceleration = 2;
-        public static final double ArmBottomPos = 0.08;
+        public static final double ArmBottomPos = 0;
         public static final double ArmHorizontalPos = 0;
-        public static final double ArmVerticalPos = -0.25;
-        public static final double ArmBackPos = -0.28;
-        
+        public static final double ArmVerticalPos = 0.12;
+        public static final double ArmBackPos = 0.345;
+        public static final double GearRatio = 23.0;
+    }
+
+    public interface Intake {
+        public static final int RollerID = 13;
+        public static final double rollerVoltage = 12;
     }
 
     public interface Motion {

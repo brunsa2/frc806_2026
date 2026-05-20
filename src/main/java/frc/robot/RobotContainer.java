@@ -15,6 +15,9 @@ import frc.robot.Subsystems.Drivetrain;
 import frc.robot.Subsystems.Indexer;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Intake;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.auto.NamedCommands;
+import frc.robot.Subsystems.Arm;
 import frc.robot.Subsystems.Blinkin;
 
 public class RobotContainer {
@@ -29,9 +32,10 @@ public class RobotContainer {
     public final Drivetrain drivetrain = new Drivetrain(Constants.Drivetrain.moduleArray, driveController);
     public final Pose pose = new Pose(Constants.Pose.CameraName, drivetrain::getKinematics, drivetrain::getGyroscopeRotation, drivetrain::getModulePositions);
     
-    public final Indexer indexer = new Indexer(Constants.Indexer.BottomRollerID, Constants.Indexer.TopRollerID);
+    public final Indexer indexer = new Indexer(Constants.Indexer.TopRollerID);
     public final Shooter shooter = new Shooter(Constants.Shooter.MotorID);
-    public final Intake intake = new Intake(Constants.Intake.ArmID, Constants.Intake.RollerID);
+    public final Intake intake = new Intake(Constants.Intake.RollerID);
+    public final Arm arm = new Arm(Constants.Arm.ArmLeaderID, Constants.Arm.ArmFollowerID);
 
     public final Blinkin blinkin = new Blinkin(0, Constants.Blinkin.SolidColors.GREEN);
 
@@ -39,12 +43,44 @@ public class RobotContainer {
         drivetrain.setPose(pose);
 
         configureBindings();
+        configureNamedCommands();
+
         SmartDashboard.putData(CommandScheduler.getInstance());
     }
 
     private void configureBindings() {
-        driveRightTrigger.whileTrue(parallel(indexer.index(), shooter.shoot()));
-        drivekRightBumper.toggleOnTrue(intake.top());
-        drivekLeftBumper.whileTrue(intake.bump());
+        driveRightTrigger.whileTrue(indexer.index());
+        drivekRightBumper.toggleOnTrue(arm.top());
+        drivekLeftBumper.whileTrue(arm.bump());
+    }
+
+    private void configureNamedCommands() {
+        NamedCommands.registerCommand("Index", indexer.index());
+        NamedCommands.registerCommand("Stop Indexer", indexer.stop());
+        NamedCommands.registerCommand("Shoot", shooter.shoot());
+        NamedCommands.registerCommand("Stop Shooter", shooter.stop());
+        NamedCommands.registerCommand("Intake", intake.intake());
+        NamedCommands.registerCommand("Discharge", intake.discharge());
+        NamedCommands.registerCommand("Stop Intake", indexer.stop());
+        NamedCommands.registerCommand("Deploy arm", arm.deploy());
+        NamedCommands.registerCommand("Bump arm", arm.bump());
+        NamedCommands.registerCommand("Top arm", arm.top());
+    }
+
+    public Command getAutonomousCommand() {
+        String blankAuto = "";
+        String auto1 = "Back_shoot";
+        String auto2 = "Back_shoot_reload_shoot";
+        String auto3 = "Back_shoot_leftmid_shoot";
+        String auto4 = "Back_shoot_rightmid_shoot";
+    
+        String autoName = blankAuto;
+
+        try {
+            return new PathPlannerAuto(autoName);
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to load auto " + autoName + ": " + e.getMessage());
+            return edu.wpi.first.wpilibj2.command.Commands.none();
+        }
     }
 }
