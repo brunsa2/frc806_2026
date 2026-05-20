@@ -18,6 +18,7 @@ import frc.robot.Subsystems.Intake;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.auto.NamedCommands;
 import frc.robot.Subsystems.Arm;
+import frc.robot.Subsystems.Blinkin;
 
 public class RobotContainer {
     public CommandXboxController driveController = new CommandXboxController(0);
@@ -35,6 +36,8 @@ public class RobotContainer {
     public final Shooter shooter = new Shooter(Constants.Shooter.MotorID);
     public final Intake intake = new Intake(Constants.Intake.RollerID);
     public final Arm arm = new Arm(Constants.Arm.ArmLeaderID, Constants.Arm.ArmFollowerID);
+
+    public final Blinkin blinkin = new Blinkin(0, Constants.Blinkin.SolidColors.GREEN);
 
     public RobotContainer() {
         drivetrain.setPose(pose);
