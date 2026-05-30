@@ -13,11 +13,15 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Subsystems.Camera;
+import frc.robot.Subsystems.Pose;
 import frc.robot.Subsystems.Drivetrain;
 import frc.robot.Subsystems.Indexer;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Intake;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.auto.NamedCommands;
+import frc.robot.Subsystems.Arm;
+import frc.robot.Subsystems.Blinkin;
 
 public class RobotContainer {
     public CommandXboxController driveController = new CommandXboxController(0);
@@ -25,18 +29,21 @@ public class RobotContainer {
     CommandXboxController ohShitController = new CommandXboxController(2);
 
     private final Trigger driveRightTrigger = driveController.rightTrigger(0.5);
+    private final Trigger drivekLeftBumper = driveController.leftBumper();
+    private final Trigger drivekRightBumper = driveController.rightBumper();
 
-    public final Drivetrain drivetrain = new Drivetrain(Constants.Modules.moduleArray, driveController);
-    public final Camera camera = new Camera(Constants.Camera.Name, Constants.Camera.MaxTrackedTargets, drivetrain::getKinematics, drivetrain::getGyroscopeRotation, drivetrain::getModulePositions);
+    public final Drivetrain drivetrain = new Drivetrain(Constants.Drivetrain.moduleArray, driveController);
+    public final Pose pose = new Pose(Constants.Pose.CameraName, drivetrain::getKinematics, drivetrain::getGyroscopeRotation, drivetrain::getModulePositions);
     
     // public final Indexer indexer = new Indexer(Constants.Indexer.BottomRollerID, Constants.Indexer.TopRollerID);
     // public final Shooter shooter = new Shooter(Constants.Shooter.MotorID);
     // public final Intake intake = new Intake(Constants.Intake.ArmID, Constants.Intake.RollerID);
 
     public RobotContainer() {
-        drivetrain.setPose2dSupplier(camera::getPose);
+        drivetrain.setPose(pose);
 
         configureBindings();
+
         SmartDashboard.putData(CommandScheduler.getInstance());
     }
 

@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Commands.DriveFieldRelative;
+import com.ctre.phoenix6.SignalLogger;
 
 public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
@@ -17,6 +18,7 @@ public class Robot extends TimedRobot {
     @Override
     public void robotInit() {
         m_robotContainer = new RobotContainer();
+        SignalLogger.enableAutoLogging(false);
     }
 
     @Override
@@ -25,7 +27,9 @@ public class Robot extends TimedRobot {
     }
 
     @Override
-    public void disabledInit() {}
+    public void disabledInit() {
+        CommandScheduler.getInstance().cancelAll();
+    }
 
     @Override
     public void disabledPeriodic() {}
@@ -35,6 +39,12 @@ public class Robot extends TimedRobot {
 
     @Override
     public void autonomousInit() {
+        // m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    
+        if (m_autonomousCommand != null) {
+            System.out.println("Auto loaded: " + m_autonomousCommand.getName());
+            CommandScheduler.getInstance().schedule(m_autonomousCommand);
+        }
     }
 
     @Override
@@ -46,7 +56,10 @@ public class Robot extends TimedRobot {
     @Override
     @SuppressWarnings("removal")
     public void teleopInit() {
-        m_robotContainer.drivetrain.getInitialCommand().schedule();
+        if (m_autonomousCommand != null) {
+            m_autonomousCommand.cancel();
+            m_autonomousCommand = null;
+        }
     }
 
     @Override

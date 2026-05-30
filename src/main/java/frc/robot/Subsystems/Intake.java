@@ -9,36 +9,43 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import frc.robot.Constants;
+
 public class Intake extends SubsystemBase {
     private final SparkFlex roller;
 
-    private double rollerSpeed = 0.5;
-
     @SuppressWarnings("removal")
-    public Intake(int armId, int rollerId) {
+    public Intake(int rollerId) {
         roller = new SparkFlex(rollerId, MotorType.kBrushless);
+        SparkFlexConfig rollerConfig = new SparkFlexConfig();
+        rollerConfig.inverted(true);
+        rollerConfig.idleMode(IdleMode.kCoast).smartCurrentLimit(30);
 
-        SparkFlexConfig config = new SparkFlexConfig();
-        config.idleMode(IdleMode.kBrake).smartCurrentLimit(30);
-
-        roller.configure(config, SparkFlex.ResetMode.kResetSafeParameters, SparkFlex.PersistMode.kPersistParameters);
-
-        setDefaultCommand(deploy());
+        roller.configure(rollerConfig, SparkFlex.ResetMode.kResetSafeParameters, SparkFlex.PersistMode.kPersistParameters);
+        setDefaultCommand(intake());
     }
 
-    public Command deploy() {
-        // Default command, motion profiled, ideallty feedforward contolled, deploy arm
-        // For now we will manually retract
-        // https://docs.wpilib.org/en/stable/docs/software/advanced-controls/introduction/tuning-vertical-arm.html
-        return run(() -> roller.set(rollerSpeed)).withName("Deploy"); 
+
+    public Command intake() {
+        return runEnd(() -> {
+            roller.setVoltage(Constants.Intake.rollerVoltage);
+        }, () -> {}).withName("Intake");
+        // return run(() -> {});
     }
 
-    public Command bump() {
-        // Motion profiled, ideallty feedforward contolled, raise arm a bit, lower arm after raise
-        return runOnce(() -> {});
+    public Command discharge() {
+        return runEnd(() -> {
+            roller.setVoltage(-Constants.Intake.rollerVoltage);
+        }, () -> {}).withName("Intake");
+        // return run(() -> {});
     }
 
-    // We _might_ need to temporarily slow down intake during shooting but that is to be determined later
+    public Command stop() {
+        return runEnd(() -> {
+            roller.setVoltage(0);
+        }, () -> {}).withName("Stop intake");
+        // return run(() -> {});
+    }
 
     @Override
     public void initSendable(SendableBuilder builder) {
