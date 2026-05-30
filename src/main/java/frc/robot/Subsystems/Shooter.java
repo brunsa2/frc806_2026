@@ -21,7 +21,6 @@ public class Shooter extends SubsystemBase {
     private final SparkFlex shooter;
     private final RelativeEncoder encoder;
 
-    private double primeRPS = Constants.Shooter.PrimeRPM / 60.0;
     private double shootRPS = Constants.Shooter.ShootRPM / 60.0;
 
     private final PIDController controller = new PIDController(Constants.Shooter.kP, Constants.Shooter.kI, Constants.Shooter.kD);
@@ -40,7 +39,7 @@ public class Shooter extends SubsystemBase {
         config.encoder.velocityConversionFactor(1.0 / 60.0);
         shooter.configure(config, SparkFlex.ResetMode.kResetSafeParameters, SparkFlex.PersistMode.kPersistParameters);
 
-        setDefaultCommand(prime());
+        setDefaultCommand(shoot());
     }
 
     // _If_ we need a third state where motor does not turn, turn off the motor
@@ -71,33 +70,32 @@ public class Shooter extends SubsystemBase {
         }
     }
 
-    public void shooter_debug(String mode) {
+    public void shooter_debug() {
         double currentRPS = encoder.getVelocity();
-        double target = mode.equals("Prime") ? primeRPS : shootRPS;
-        SmartDashboard.putString("Shooter status", mode);
+        double target = shootRPS;
         SmartDashboard.putNumber("Shooter RPS", currentRPS);
         SmartDashboard.putNumber("Shooter RPM", currentRPS * 60.0);
         SmartDashboard.putNumber("Shooter error", target - currentRPS);
         speed_alert(check_correct_speed(target, currentRPS));
     }
 
-    public Command prime() {
-        // // Default command, rotate slowly to reduce shooting prep time
+    public Command shoot() {
         return runEnd(() -> {
-            setSpeed(primeRPS);
-            shooter_debug("Prime");
-        }, () -> {}).withName("Prime");
+            setSpeed(shootRPS);
+        }, () -> {}).withName("Shoot");
         // return run(() -> {});
     }
 
-    public Command shoot() {
-        // // Speed up rollers, control velocty
-        // // https://docs.wpilib.org/en/stable/docs/software/advanced-controls/introduction/tuning-flywheel.html
+    public Command stop() {
         return runEnd(() -> {
-            setSpeed(shootRPS);
-            shooter_debug("Shoot");
-        }, () -> {}).withName("Shoot");
+            shooter.setVoltage(0);
+        }, () -> {}).withName("Stop shooter");
         // return run(() -> {});
+    }
+
+    @Override
+    public void periodic() {
+        shooter_debug();
     }
 
     @Override

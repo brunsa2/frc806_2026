@@ -11,19 +11,16 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import frc.robot.Constants;
 
 public class Indexer extends SubsystemBase {
-    private final SparkFlex bottomRoller;
     private final SparkFlex topRoller;
 
     @SuppressWarnings("removal")
-    public Indexer(int bottomRollerID, int topRollerID) {
-        bottomRoller = new SparkFlex(bottomRollerID, MotorType.kBrushless);
+    public Indexer(int topRollerID) {
         topRoller = new SparkFlex(topRollerID, MotorType.kBrushless);
 
         SparkFlexConfig config = new SparkFlexConfig();
         config.idleMode(IdleMode.kBrake).smartCurrentLimit(30);
         config.inverted(true);
 
-        bottomRoller.configure(config, SparkFlex.ResetMode.kResetSafeParameters, SparkFlex.PersistMode.kPersistParameters);
         topRoller.configure(config, SparkFlex.ResetMode.kResetSafeParameters, SparkFlex.PersistMode.kPersistParameters);
 
         setDefaultCommand(idleIndex());
@@ -31,7 +28,6 @@ public class Indexer extends SubsystemBase {
 
     public Command idleIndex() {
         return runEnd(() -> {
-            bottomRoller.setVoltage(Constants.Indexer.floorIdleVoltage);
             topRoller.setVoltage(-Constants.Indexer.ceilingIdleVoltage);
         }, () -> {}).withName("Idle index");
         // return run(() -> {});
@@ -39,9 +35,15 @@ public class Indexer extends SubsystemBase {
 
     public Command index() {
         return runEnd(() -> {
-            bottomRoller.setVoltage(Constants.Indexer.floorIndexVoltage);
             topRoller.setVoltage(Constants.Indexer.ceilingIndexVoltage);
         }, () -> {}).withName("Index");
+        // return run(() -> {});
+    }
+
+    public Command stop() {
+        return runEnd(() -> {
+            topRoller.setVoltage(0);
+        }, () -> {}).withName("Stop indexer");
         // return run(() -> {});
     }
 

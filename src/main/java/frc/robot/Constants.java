@@ -79,20 +79,22 @@ public class Constants {
         public static final double SlowFactorOffset = 1;
 
         public static final double SteerMotorSlewRate = 20;
+        
+        public static final double DriveMotorsLowSupplyCurrentLimit = 40;
+        public static final double DriveMotorsHighSupplyCurrentLimit = 60;
+        public static final double DriveMotorsHighSupplyCurrentSeconds = 1;
+
+        public static final double SteerMotorsSupplyCurrentLimit = 20;
     }
 
     public interface Indexer {
-        public static final int BottomRollerID = 14;
         public static final int TopRollerID = 16;
-        public static final double floorIdleVoltage = 1.2;
-        public static final double floorIndexVoltage = 4.8;
         public static final double ceilingIdleVoltage = 2.4;
         public static final double ceilingIndexVoltage = 8.4;
     }
 
     public interface Shooter {
         public static final int MotorID = 17;
-        public static final double PrimeRPM = 3000;
         public static final double ShootRPM = 3500;
         public static final double kP = 0.5;
         public static final double kI = 0;
@@ -101,25 +103,29 @@ public class Constants {
         public static final double kV = 0.105263;
     }
 
-    public interface Intake {
-        public static final int ArmID = 15;
-        public static final int RollerID = 13;
+    public interface Arm {
+        public static final int ArmLeaderID = 15;
+        public static final int ArmFollowerID = 14;
         public static final int ArmEncoderId = 18;
-        public static final double rollerVoltage = 12;
         public static final double kG = 0;
         public static final double kS = 0;
         public static final double kV = 0;
         public static final double kA = 0;
         public static final double kP = 40;
-        public static final double kI = 10;
+        public static final double kI = 5;
         public static final double kD = 0;
         public static final double MotionMagicCruiseVelocity = 75;
         public static final double MotionMagicAcceleration = 2;
-        public static final double ArmBottomPos = 0.08;
+        public static final double ArmBottomPos = 0;
         public static final double ArmHorizontalPos = 0;
-        public static final double ArmVerticalPos = -0.25;
-        public static final double ArmBackPos = -0.28;
-        
+        public static final double ArmVerticalPos = 0.12;
+        public static final double ArmBackPos = 0.345;
+        public static final double GearRatio = 23.0;
+    }
+
+    public interface Intake {
+        public static final int RollerID = 13;
+        public static final double rollerVoltage = 12;
     }
 
     public interface Motion {
@@ -127,4 +133,33 @@ public class Constants {
         public static final double rotationKP = 0.02, rotationKI = 0, rotationKD = 0;
     }
 
+    public interface Blinkin {
+        public enum SolidColors {
+            HOT_PINK(0.57),
+            DARK_RED(0.59),
+            RED(0.61),
+            RED_ORANGE(0.63),
+            ORANGE(0.65),
+            GOLD(0.67),
+            YELLOW(0.69),
+            LAWN_GREEN(0.71),
+            LIME(0.73),
+            DARK_GREEN(0.75),
+            GREEN(0.77),
+            BLUE_GREEN(0.79),
+            AQUA(0.81),
+            SKY_BLUE(0.83),
+            DARK_BLUE(0.85),
+            BLUE(0.87),
+            BLUE_VIOLET(0.89),
+            VIOLET(0.91),
+            WHITE(0.93),
+            GRAY(0.95),
+            DARK_GRAY(0.97),
+            BLACK(0.99);
+
+            public final double value;
+            SolidColors(double value) {this.value = value;}
+        }
+    }
 }

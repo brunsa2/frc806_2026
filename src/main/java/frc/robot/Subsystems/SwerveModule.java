@@ -15,6 +15,8 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Preferences;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -42,17 +44,30 @@ public class SwerveModule extends SubsystemBase{
     final double STEER_VELOCITY_CONVERSION = STEER_POSITION_CONVERSION / 60.0;
     private final SlewRateLimiter steerLimiter = new SlewRateLimiter(Constants.Drivetrain.SteerMotorSlewRate);
 
+    final Alert SwerveDriveMotorAlert;
+    final Alert SwerveSteerMotorAlert;
+    final Alert SwerveEncoderAlert;
+    final String SwerveRotationName;
+
     public SwerveModule(int driveMotorID, int steerMotorID, int encoderID){
         this.driveMotorID = driveMotorID;
         this.encoderID = encoderID;
+
+        SwerveDriveMotorAlert = new Alert("Lost module " + encoderID + " drive motor(" + driveMotorID + ")", AlertType.kError);
+        SwerveSteerMotorAlert = new Alert("Lost module " + encoderID + " steer motor(" + steerMotorID + ")", AlertType.kError);
+        SwerveEncoderAlert = new Alert("Lost module " + encoderID + " encoder(" + encoderID + ")", AlertType.kError);
+        SwerveRotationName = "Swerve " + encoderID + " rotation";
 
         //drive motor 
         driveMotor = new TalonFX(driveMotorID);
         var driveMotorConfig = new TalonFXConfiguration();
         driveMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         driveMotorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-        driveMotorConfig.CurrentLimits.SupplyCurrentLimit = 40;
+        driveMotorConfig.CurrentLimits.SupplyCurrentLimit = Constants.Drivetrain.DriveMotorsHighSupplyCurrentLimit;
+        driveMotorConfig.CurrentLimits.SupplyCurrentLowerLimit = Constants.Drivetrain.DriveMotorsLowSupplyCurrentLimit;
+        driveMotorConfig.CurrentLimits.SupplyCurrentLowerTime = Constants.Drivetrain.DriveMotorsHighSupplyCurrentSeconds;
         driveMotorConfig.Feedback.SensorToMechanismRatio = 1/DRIVE_POSITION_CONVERSION;
+        driveMotorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         driveMotor.getConfigurator().apply(driveMotorConfig);
         driveMotor.setPosition(0);
 
@@ -61,7 +76,7 @@ public class SwerveModule extends SubsystemBase{
         var steerMotorConfig = new TalonFXConfiguration();
         steerMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         steerMotorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-        steerMotorConfig.CurrentLimits.SupplyCurrentLimit = 20;
+        steerMotorConfig.CurrentLimits.SupplyCurrentLimit = Constants.Drivetrain.SteerMotorsSupplyCurrentLimit;
         steerMotor.getConfigurator().apply(steerMotorConfig);
         
         // module encoder
@@ -79,7 +94,6 @@ public class SwerveModule extends SubsystemBase{
 
         steerController = new PIDController(Constants.Drivetrain.SteerDriveKP, Constants.Drivetrain.SteerDriveKI, Constants.Drivetrain.SteerDriveKD);
         steerController.enableContinuousInput(-0.5, 0.5);
-
     }
 
     public void setTargetState(SwerveModuleState targetState) {
@@ -98,17 +112,44 @@ public class SwerveModule extends SubsystemBase{
 
     public Command calibrate() {
         return runOnce(() -> {
-            var encoderValue = moduleEncoder.getAbsolutePosition().getValueAsDouble();
+            var adjustedEncoderValue = moduleEncoder.getAbsolutePosition().getValueAsDouble();
             var steerEncoderConfig = new CANcoderConfiguration();
-            steerEncoderConfig.MagnetSensor.MagnetOffset = -encoderValue;
+            moduleEncoder.getConfigurator().refresh(steerEncoderConfig);
+            double offset = steerEncoderConfig.MagnetSensor.MagnetOffset;
+            var rawEncoderValue = adjustedEncoderValue - offset;
+            steerEncoderConfig.MagnetSensor.MagnetOffset = -rawEncoderValue;
             moduleEncoder.getConfigurator().apply(steerEncoderConfig);
-            Preferences.setDouble(EncoderPreferenceKey + encoderID, encoderValue);
-        }).withName("Calibrate");
+            Preferences.setDouble(EncoderPreferenceKey + encoderID, rawEncoderValue);
+            if (Math.abs(moduleEncoder.getAbsolutePosition().waitForUpdate(0.1).getValueAsDouble()) < 0.01) {
+                System.out.println("Succesfully calibrated swerve " + encoderID);
+            }
+            else {
+                System.out.println("Swerve " + encoderID + " calibration failed");
+            }
+        }).ignoringDisable(true).withName("Calibrate");
     }
 
+    @Override
     public void periodic() {
-        // SmartDashboard.putNumber("S" + driveMotorID, getModuleAngRotations());
+        setAlerts();
+        SmartDashboard.putNumber(SwerveRotationName, getModuleAngRotations());
     }
+
+    public void setAlerts() {
+        var deviceStatus = getDeviceStatus();
+        SwerveDriveMotorAlert.set(!deviceStatus[0]);
+        SwerveSteerMotorAlert.set(!deviceStatus[1]);
+        SwerveEncoderAlert.set(!deviceStatus[2]);
+    }
+
+    public boolean getSwerveOperational() {
+        return driveMotor.isConnected() && steerMotor.isConnected() && moduleEncoder.isConnected();
+    }
+
+    public boolean[] getDeviceStatus() {
+        return new boolean[]{driveMotor.isConnected(), steerMotor.isConnected(), moduleEncoder.isConnected()};
+    }
+    
 
     public double getModuleAngRotations() {
         return moduleEncoder.getAbsolutePosition().getValueAsDouble();
